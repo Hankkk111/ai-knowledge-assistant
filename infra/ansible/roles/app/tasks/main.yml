@@ -75,3 +75,21 @@
     enabled: yes
     state: restarted
   become: yes
+
+- name: Copy health-check script to the server
+  copy:
+    src: health-check.sh
+    dest: /home/deployer/health-check.sh
+    mode: '0755'
+  become: yes
+  become_user: deployer
+
+- name: Run health check after deployment (with systemd + disk checks)
+  shell: /home/deployer/health-check.sh --remote-service
+  become: yes
+  register: health_check_result
+  changed_when: false
+
+- name: Show health check output
+  debug:
+    var: health_check_result.stdout_lines
