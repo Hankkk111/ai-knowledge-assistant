@@ -1,0 +1,23 @@
+name: Deployment Health Check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: chmod +x scripts/health-check.sh
+
+      - name: Check EC2 deployment
+        run: BASE_URL=http://3.80.63.201:3000 ./scripts/health-check.sh
+
+      - name: Check Lambda deployment
+        run: BASE_URL=https://xum7phmpeg.execute-api.us-east-1.amazonaws.com ./scripts/health-check.sh
