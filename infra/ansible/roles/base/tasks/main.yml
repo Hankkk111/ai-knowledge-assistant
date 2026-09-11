@@ -1,0 +1,61 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  become: yes
+
+- name: Create a dedicated non-root deploy user
+  user:
+    name: deployer
+    shell: /bin/bash
+    create_home: yes
+    groups: sudo
+    append: yes
+  become: yes
+
+- name: Install UFW firewall
+  apt:
+    name: ufw
+    state: present
+  become: yes
+
+- name: Allow SSH through firewall
+  community.general.ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+  become: yes
+
+- name: Allow app port through firewall
+  community.general.ufw:
+    rule: allow
+    port: '3000'
+    proto: tcp
+  become: yes
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  become: yes
+
+- name: Set up daily log rotation for app logs
+  copy:
+    dest: /etc/logrotate.d/ai-knowledge-assistant
+    content: |
+      /var/log/ai-knowledge-assistant/*.log {
+        daily
+        rotate 7
+        compress
+        missingok
+        notifempty
+      }
+  become: yes
+
+- name: Create log directory
+  file:
+    path: /var/log/ai-knowledge-assistant
+    state: directory
+    owner: deployer
+    group: deployer
+  become: yes

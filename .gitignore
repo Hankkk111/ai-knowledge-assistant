@@ -21,3 +21,9 @@ infra/*.tfvars
 # Editor
 .vscode/
 .idea/
+infra/ec2-key
+infra/ec2-key.pub
+tests/integration/venv/
+__pycache__/
+*.pyc
+.pytest_cache/

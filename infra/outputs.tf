@@ -17,3 +17,8 @@ output "frontend_url" {
   description = "S3 static website URL for the frontend"
   value       = aws_s3_bucket_website_configuration.frontend.website_endpoint
 }
+
+output "ec2_public_ip" {
+  description = "Public IP of the Linux ops instance"
+  value       = aws_instance.ops.public_ip
+}

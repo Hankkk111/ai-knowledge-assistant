@@ -1,0 +1,77 @@
+---
+- name: Install Node.js 20.x repo setup script
+  shell: curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  args:
+    creates: /etc/apt/sources.list.d/nodesource.list
+  become: yes
+
+- name: Install Node.js
+  apt:
+    name: nodejs
+    state: present
+  become: yes
+
+- name: Install git
+  apt:
+    name: git
+    state: present
+  become: yes
+
+- name: Clone the application repo
+  git:
+    repo: https://github.com/Hankkk111/ai-knowledge-assistant.git
+    dest: /home/deployer/app
+    version: main
+    force: yes
+  become: yes
+  become_user: deployer
+
+- name: Install full dependencies (including devDependencies, needed to build)
+  npm:
+    path: /home/deployer/app
+  become: yes
+  become_user: deployer
+
+- name: Build TypeScript
+  shell: npm run build
+  args:
+    chdir: /home/deployer/app
+  become: yes
+  become_user: deployer
+
+- name: Prune devDependencies for production
+  shell: npm prune --production
+  args:
+    chdir: /home/deployer/app
+  become: yes
+  become_user: deployer
+
+- name: Install systemd service file
+  copy:
+    dest: /etc/systemd/system/ai-knowledge-assistant.service
+    content: |
+      [Unit]
+      Description=AI Knowledge Assistant backend
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=deployer
+      WorkingDirectory=/home/deployer/app
+      ExecStart=/usr/bin/node dist/index.js
+      Restart=on-failure
+      Environment=PORT=3000
+      StandardOutput=append:/var/log/ai-knowledge-assistant/app.log
+      StandardError=append:/var/log/ai-knowledge-assistant/error.log
+
+      [Install]
+      WantedBy=multi-user.target
+  become: yes
+
+- name: Reload systemd and enable service
+  systemd:
+    daemon_reload: yes
+    name: ai-knowledge-assistant
+    enabled: yes
+    state: restarted
+  become: yes

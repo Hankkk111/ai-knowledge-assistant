@@ -1,0 +1,45 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # 每天跑一次，监控部署环境是否还健康
+
+jobs:
+  test-lambda-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: pip install -r tests/integration/requirements.txt
+
+      - name: Run integration tests against Lambda deployment
+        env:
+          BASE_URL: https://xum7phmpeg.execute-api.us-east-1.amazonaws.com
+        run: pytest tests/integration/test_deployment.py -v
+
+  test-ec2-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: pip install -r tests/integration/requirements.txt
+
+      - name: Run integration tests against EC2 deployment
+        env:
+          BASE_URL: http://3.80.63.201:3000
+        run: pytest tests/integration/test_deployment.py -v
