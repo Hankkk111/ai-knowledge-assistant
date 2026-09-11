@@ -1,0 +1,23 @@
+# Node
+node_modules/
+dist/
+dist-package/
+
+# Terraform
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/terraform.tfstate
+infra/terraform.tfstate.backup
+infra/lambda.zip
+infra/*.tfvars
+
+# Env
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

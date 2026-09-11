@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #12151C;
+  --color-panel: #1B1F2A;
+  --color-paper: #E8E6DE;
+  --color-amber: #C99A4A;
+  --font-serif: "Source Serif 4", serif;
+}
