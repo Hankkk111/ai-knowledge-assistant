@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "tsx --test tests/unit/*.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.0.0",

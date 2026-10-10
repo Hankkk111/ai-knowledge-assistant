@@ -39,6 +39,10 @@ Database, requires Docker:
 
     docker run -d --name ai-knowledge-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=ai_knowledge_assistant -p 5433:5432 pgvector/pgvector:pg16
 
+Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
+
+    npm test
+
 ## Infrastructure deployment
 
     cd infra
