@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { Message } from "./types";
-import { sendMessage } from "./api";
+import { ApiError, sendMessage } from "./api";
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -29,8 +29,15 @@ export default function App() {
         ...prev,
         { role: "assistant", content: res.answer, sources: res.sources },
       ]);
-    } catch {
-      setError("Couldn't reach the knowledge base. Check the API and try again.");
+    } catch (err) {
+      // 4xx responses carry a specific reason from the API (e.g. the query is
+      // too long); show it so the user knows what to change. Anything else is
+      // a network or server failure.
+      if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
+        setError(err.message);
+      } else {
+        setError("Couldn't reach the knowledge base. Check the API and try again.");
+      }
     } finally {
       setLoading(false);
     }
