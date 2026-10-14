@@ -10,6 +10,12 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+// Unknown routes would otherwise get Express's default HTML "Cannot GET /x"
+// page. Keep every response from this API JSON, including 404s.
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: `route not found: ${req.method} ${req.path}` });
+});
+
 interface HttpError extends Error {
   status?: number;
   type?: string;

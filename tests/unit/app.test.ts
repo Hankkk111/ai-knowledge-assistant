@@ -51,4 +51,17 @@ describe("app error handling", () => {
     assert.equal(res.status, 400);
     assert.deepEqual(await res.json(), { error: "query is required" });
   });
+
+  test("unknown route returns a 404 JSON error", async () => {
+    const res = await fetch(`${baseUrl}/does-not-exist`);
+    assert.equal(res.status, 404);
+    assert.match(res.headers.get("content-type") ?? "", /application\/json/);
+    assert.deepEqual(await res.json(), { error: "route not found: GET /does-not-exist" });
+  });
+
+  test("wrong method on a known path returns a 404 JSON error", async () => {
+    const res = await fetch(`${baseUrl}/chat`);
+    assert.equal(res.status, 404);
+    assert.deepEqual(await res.json(), { error: "route not found: GET /chat" });
+  });
 });
