@@ -4,6 +4,12 @@ import { findRelevantChunks } from "../services/retrieval";
 import { generateAnswer } from "../services/bedrock";
 import type { ChatRequest, ChatResponse } from "../types";
 
+// Returned when retrieval finds nothing, so the model is never asked to answer
+// without any indexed context (it would otherwise answer from general
+// knowledge, with no sources to back it up).
+export const NO_CONTEXT_ANSWER =
+  "I couldn't find any indexed documents relevant to that question.";
+
 // Upper bound on query length, to keep embedding and generation costs predictable.
 export const MAX_QUERY_LENGTH = 2000;
 
@@ -47,6 +53,11 @@ export function createChatHandler(
     try {
       const queryEmbedding = await deps.embedText(trimmedQuery);
       const chunks = await deps.findRelevantChunks(queryEmbedding);
+
+      if (chunks.length === 0) {
+        res.json({ answer: NO_CONTEXT_ANSWER, sources: [] } satisfies ChatResponse);
+        return;
+      }
 
       const context = chunks.map((c) => c.content).join("\n\n");
       const answer = await deps.generateAnswer(trimmedQuery, context);

@@ -4,6 +4,7 @@ import type { Request, Response } from "express";
 import {
   createChatHandler,
   MAX_QUERY_LENGTH,
+  NO_CONTEXT_ANSWER,
   type ChatDependencies,
 } from "../../src/handlers/chat";
 import type { DocumentChunk } from "../../src/types";
@@ -75,6 +76,17 @@ describe("POST /chat handler", () => {
       calls.generateAnswer[0][1],
       `Refunds are processed within 5 business days.\n\n${"x".repeat(300)}`
     );
+  });
+
+  test("does not call the model when no chunks are retrieved", async () => {
+    const { deps, calls } = fakeDeps({ findRelevantChunks: async () => [] });
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "What is our refund policy?" }), res);
+
+    assert.equal(captured.statusCode, 200);
+    assert.deepEqual(captured.body, { answer: NO_CONTEXT_ANSWER, sources: [] });
+    assert.equal(calls.generateAnswer.length, 0);
   });
 
   test("trims whitespace before embedding and generating", async () => {
