@@ -39,6 +39,16 @@ Database, requires Docker:
 
     docker run -d --name ai-knowledge-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=ai_knowledge_assistant -p 5433:5432 pgvector/pgvector:pg16
 
+Configuration, all optional (defaults match the local setup above):
+
+| Variable | Default | Used for |
+| --- | --- | --- |
+| PORT | 3000 | Local dev server port |
+| DB_HOST / DB_PORT | localhost / 5433 | Postgres connection |
+| DB_NAME | ai_knowledge_assistant | Postgres database |
+| DB_USER / DB_PASSWORD | postgres / postgres | Postgres credentials |
+| BEDROCK_REGION | us-east-1 | Region for Bedrock embedding and generation calls |
+
 Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
     npm test
@@ -58,6 +68,7 @@ Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 - src/handlers/chat.ts, chat request handler
 - src/services/bedrock.ts, Claude generation via Bedrock
 - src/services/embedding.ts, text embedding via Titan
+- src/services/bedrockClient.ts, shared Bedrock client and region config
 - src/services/retrieval.ts, pgvector similarity search
 - src/db/client.ts, PostgreSQL connection
 - src/db/schema.sql, table and index definitions

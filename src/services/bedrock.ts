@@ -1,6 +1,5 @@
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-
-const client = new BedrockRuntimeClient({ region: "us-east-1" });
+import { InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+import { bedrockClient as client } from "./bedrockClient";
 
 /**
  * Extracts the generated text from an Anthropic Messages response body.
