@@ -35,6 +35,8 @@ Frontend, runs on localhost:5173:
     npm install
     npm run dev
 
+In dev mode the frontend sends /chat and /health to the Vite dev server, which proxies them to the local backend on localhost:3000 (set API_PROXY_TARGET to proxy elsewhere). Production builds (npm run build) call the deployed API. Set VITE_API_BASE to point either mode at a specific API URL instead.
+
 Database, requires Docker:
 
     docker run -d --name ai-knowledge-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=ai_knowledge_assistant -p 5433:5432 pgvector/pgvector:pg16
@@ -73,6 +75,7 @@ Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 - src/db/client.ts, PostgreSQL connection
 - src/db/schema.sql, table and index definitions
 - frontend/src/App.tsx, chat UI
+- frontend/src/api.ts, API client and base URL selection
 - infra/*.tf, Terraform resource definitions
 
 ## Status

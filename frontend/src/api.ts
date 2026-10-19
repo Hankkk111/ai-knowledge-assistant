@@ -1,4 +1,14 @@
-const API_BASE = "https://xum7phmpeg.execute-api.us-east-1.amazonaws.com";
+const DEPLOYED_API_BASE = "https://xum7phmpeg.execute-api.us-east-1.amazonaws.com";
+
+/**
+ * Base URL for API requests. VITE_API_BASE overrides it when set. Otherwise
+ * production builds call the deployed API, and `npm run dev` uses relative
+ * paths so the Vite dev server can proxy them to the local backend (see
+ * vite.config.ts), which avoids CORS and keeps local testing off the live API.
+ */
+const API_BASE = (
+  import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "" : DEPLOYED_API_BASE)
+).replace(/\/+$/, "");
 
 export interface ChatResponse {
   answer: string;
