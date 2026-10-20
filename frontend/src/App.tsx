@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import type { Message } from "./types";
-import { ApiError, sendMessage } from "./api";
+import { ApiError, MAX_QUERY_LENGTH, sendMessage } from "./api";
+
+// Show the remaining-characters hint once the query gets close to the limit.
+const LENGTH_HINT_THRESHOLD = MAX_QUERY_LENGTH - 200;
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -107,6 +110,8 @@ export default function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask something…"
+            aria-label="Question"
+            maxLength={MAX_QUERY_LENGTH}
             className="flex-1 bg-panel border border-white/10 rounded-sm px-4 py-2.5 text-paper placeholder:text-paper/30 outline-none focus:border-amber/50 transition-colors"
           />
           <button
@@ -117,6 +122,11 @@ export default function App() {
             Ask
           </button>
         </div>
+        {input.length >= LENGTH_HINT_THRESHOLD && (
+          <p className="max-w-2xl mx-auto mt-2 text-xs text-paper/50 font-mono text-right">
+            {MAX_QUERY_LENGTH - input.length} characters left
+          </p>
+        )}
       </form>
     </div>
   );

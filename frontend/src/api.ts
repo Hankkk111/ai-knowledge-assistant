@@ -10,6 +10,13 @@ const API_BASE = (
   import.meta.env.VITE_API_BASE ?? (import.meta.env.DEV ? "" : DEPLOYED_API_BASE)
 ).replace(/\/+$/, "");
 
+/**
+ * Longest query the API accepts (MAX_QUERY_LENGTH in src/handlers/chat.ts).
+ * The chat input enforces it so users aren't sent a 400 for an over-long
+ * question.
+ */
+export const MAX_QUERY_LENGTH = 2000;
+
 export interface ChatResponse {
   answer: string;
   sources: Array<{ documentId: string; snippet: string }>;
