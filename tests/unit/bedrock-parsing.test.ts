@@ -7,7 +7,11 @@ import {
   buildEmbeddingRequest,
   parseEmbeddingResponse,
 } from "../../src/services/embedding";
-import { parseAnswerResponse } from "../../src/services/bedrock";
+import {
+  ANSWER_SYSTEM_PROMPT,
+  buildAnswerRequest,
+  parseAnswerResponse,
+} from "../../src/services/bedrock";
 
 describe("buildEmbeddingRequest", () => {
   test("requests normalized vectors with the configured dimensions", () => {
@@ -84,6 +88,25 @@ describe("parseAnswerResponse", () => {
     assert.throws(
       () => parseAnswerResponse({ content: [{ type: "text", text: "   " }] }),
       /generated text/
+    );
+  });
+});
+
+describe("buildAnswerRequest", () => {
+  test("sends the grounding system prompt", () => {
+    const body = JSON.parse(buildAnswerRequest("What is RAG?", "Some context"));
+    assert.equal(body.system, ANSWER_SYSTEM_PROMPT);
+    assert.equal(body.anthropic_version, "bedrock-2023-05-31");
+    assert.equal(typeof body.max_tokens, "number");
+  });
+
+  test("wraps the context in tags and appends the question", () => {
+    const body = JSON.parse(buildAnswerRequest("What is RAG?", "Chunk A\n\nChunk B"));
+    assert.equal(body.messages.length, 1);
+    assert.equal(body.messages[0].role, "user");
+    assert.equal(
+      body.messages[0].content,
+      "<context>\nChunk A\n\nChunk B\n</context>\n\nQuestion: What is RAG?"
     );
   });
 });
