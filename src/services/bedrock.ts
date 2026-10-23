@@ -48,12 +48,23 @@ export const ANSWER_SYSTEM_PROMPT = [
 ].join(" ");
 
 /**
+ * Neutralizes <context> / </context> tags that appear inside retrieved text.
+ * Indexed documents are untrusted input: a chunk containing a literal
+ * "</context>" would otherwise close the context block early, and whatever
+ * follows it would read to the model as part of the user's turn rather than
+ * as reference material.
+ */
+export function escapeContextTags(text: string): string {
+  return text.replace(/<(\/?)(\s*context\s*)>/gi, "&lt;$1$2&gt;");
+}
+
+/**
  * Builds the Anthropic Messages request body for a grounded answer. The
  * retrieved context is wrapped in <context> tags so the model can tell it
  * apart from the user's question.
  */
 export function buildAnswerRequest(query: string, context: string): string {
-  const prompt = `<context>\n${context}\n</context>\n\nQuestion: ${query}`;
+  const prompt = `<context>\n${escapeContextTags(context)}\n</context>\n\nQuestion: ${query}`;
 
   return JSON.stringify({
     anthropic_version: "bedrock-2023-05-31",
