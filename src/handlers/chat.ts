@@ -13,6 +13,28 @@ export const NO_CONTEXT_ANSWER =
 // Upper bound on query length, to keep embedding and generation costs predictable.
 export const MAX_QUERY_LENGTH = 2000;
 
+// Maximum length, in Unicode code points, of the source snippet returned per chunk.
+export const SNIPPET_LENGTH = 150;
+
+/**
+ * Builds the short preview of a chunk that is returned in `sources`.
+ * Whitespace runs (chunks often keep the line breaks and indentation of the
+ * original document) are collapsed to single spaces so the preview reads as
+ * one line. Truncation counts Unicode code points rather than UTF-16 units,
+ * so an emoji or other astral character is never split into a lone surrogate
+ * (which would render as "\uFFFD"), and an ellipsis marks that the text was cut.
+ */
+export function buildSnippet(content: string, maxLength: number = SNIPPET_LENGTH): string {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  const codePoints = Array.from(normalized);
+
+  if (codePoints.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${codePoints.slice(0, maxLength).join("").trimEnd()}…`;
+}
+
 // External services the chat pipeline depends on. Injectable so the handler
 // can be unit-tested without calling Bedrock or Postgres.
 export interface ChatDependencies {
@@ -66,7 +88,7 @@ export function createChatHandler(
         answer,
         sources: chunks.map((c) => ({
           documentId: c.documentId,
-          snippet: c.content.slice(0, 150),
+          snippet: buildSnippet(c.content),
         })),
       };
 
