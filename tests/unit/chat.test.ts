@@ -2,8 +2,10 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import type { Request, Response } from "express";
 import {
+  buildSnippet,
   createChatHandler,
   MAX_QUERY_LENGTH,
+  SNIPPET_LENGTH,
   NO_CONTEXT_ANSWER,
   type ChatDependencies,
 } from "../../src/handlers/chat";
@@ -69,7 +71,7 @@ describe("POST /chat handler", () => {
       answer: "Within 5 business days.",
       sources: [
         { documentId: "doc-a", snippet: "Refunds are processed within 5 business days." },
-        { documentId: "doc-b", snippet: "x".repeat(150) },
+        { documentId: "doc-b", snippet: `${"x".repeat(150)}…` },
       ],
     });
     assert.equal(
@@ -158,5 +160,37 @@ describe("POST /chat handler", () => {
     assert.deepEqual(captured.body, {
       error: "Failed to generate an answer. Please try again later.",
     });
+  });
+});
+
+describe("buildSnippet", () => {
+  test("returns short content unchanged", () => {
+    assert.equal(buildSnippet("Refunds take 5 days."), "Refunds take 5 days.");
+  });
+
+  test("does not add an ellipsis when content is exactly the limit", () => {
+    const content = "a".repeat(SNIPPET_LENGTH);
+    assert.equal(buildSnippet(content), content);
+  });
+
+  test("truncates long content and marks it with an ellipsis", () => {
+    assert.equal(buildSnippet("a".repeat(SNIPPET_LENGTH + 1)), `${"a".repeat(SNIPPET_LENGTH)}…`);
+  });
+
+  test("collapses line breaks and indentation into single spaces", () => {
+    assert.equal(
+      buildSnippet("  Refund policy\n\n\tRefunds take\r\n5 days.  "),
+      "Refund policy Refunds take 5 days."
+    );
+  });
+
+  test("never splits a surrogate pair when truncating", () => {
+    const snippet = buildSnippet("😀".repeat(10), 3);
+    assert.equal(snippet, "😀😀😀…");
+    assert.ok(snippet.isWellFormed());
+  });
+
+  test("drops trailing whitespace before the ellipsis", () => {
+    assert.equal(buildSnippet("abc def", 4), "abc…");
   });
 });
