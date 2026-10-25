@@ -47,6 +47,32 @@ async function readErrorMessage(res: Response): Promise<string> {
   return `Request failed: ${res.status}`;
 }
 
+/**
+ * Checks that a successful /chat body has the expected shape before the UI
+ * renders it. A proxy or gateway can answer 200 with something else (an HTML
+ * page, `{}`), which would otherwise show up as a blank assistant message.
+ * Malformed source entries are dropped rather than failing the whole answer.
+ */
+export function parseChatResponse(body: unknown): ChatResponse {
+  const { answer, sources } = (body ?? {}) as { answer?: unknown; sources?: unknown };
+
+  if (typeof answer !== "string") {
+    throw new Error("API response did not contain an answer");
+  }
+
+  const validSources = Array.isArray(sources)
+    ? sources.filter(
+        (s): s is ChatResponse["sources"][number] =>
+          typeof s === "object" &&
+          s !== null &&
+          typeof (s as { documentId?: unknown }).documentId === "string" &&
+          typeof (s as { snippet?: unknown }).snippet === "string"
+      )
+    : [];
+
+  return { answer, sources: validSources };
+}
+
 export async function sendMessage(query: string): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
@@ -58,5 +84,12 @@ export async function sendMessage(query: string): Promise<ChatResponse> {
     throw new ApiError(res.status, await readErrorMessage(res));
   }
 
-  return res.json();
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    throw new Error("API response was not valid JSON");
+  }
+
+  return parseChatResponse(body);
 }
