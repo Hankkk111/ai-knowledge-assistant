@@ -29,6 +29,14 @@ describe("findRelevantChunks", () => {
     assert.match(calls[0].text, /ORDER BY embedding <=> \$1/);
   });
 
+  test("only searches chunks that have an embedding", async () => {
+    const { db, calls } = fakeDb();
+
+    await findRelevantChunks([1, 2], 3, db);
+
+    assert.match(calls[0].text, /WHERE embedding IS NOT NULL\s+ORDER BY/);
+  });
+
   test("maps database rows to DocumentChunk objects", async () => {
     const { db } = fakeDb([
       { id: "c1", document_id: "d1", content: "hello", metadata: { page: 2 } },

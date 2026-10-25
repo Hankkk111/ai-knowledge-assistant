@@ -30,9 +30,14 @@ export async function findRelevantChunks(
 
   const vectorLiteral = `[${queryEmbedding.join(",")}]`;
 
+  // The embedding column is nullable (a chunk can be stored before it has
+  // been embedded). pgvector's distance to NULL is NULL, which sorts last but
+  // is still returned when there are fewer than `limit` embedded chunks, so
+  // un-embedded chunks would be sent to the model as "relevant" context.
   const result = await db.query(
     `SELECT id, document_id, content, metadata
      FROM document_chunks
+     WHERE embedding IS NOT NULL
      ORDER BY embedding <=> $1
      LIMIT $2`,
     [vectorLiteral, limit]
