@@ -11,6 +11,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // A blank or whitespace-only question is ignored on submit, so don't
+  // present the button as clickable for one.
+  const canSubmit = !loading && input.trim().length > 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -116,7 +119,7 @@ export default function App() {
           />
           <button
             type="submit"
-            disabled={loading}
+            disabled={!canSubmit}
             className="px-5 py-2.5 bg-amber text-ink font-medium rounded-sm hover:bg-amber/90 disabled:opacity-40 transition-colors"
           >
             Ask
