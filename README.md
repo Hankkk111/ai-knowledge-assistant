@@ -66,6 +66,7 @@ Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
 - src/app.ts, Express app definition
 - src/index.ts, local dev entry point
+- src/port.ts, dev server port selection
 - src/lambda.ts, AWS Lambda entry point
 - src/handlers/chat.ts, chat request handler
 - src/services/bedrock.ts, Claude generation via Bedrock
