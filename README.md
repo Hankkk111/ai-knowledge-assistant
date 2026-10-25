@@ -55,6 +55,40 @@ Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
     npm test
 
+## API
+
+All responses, including errors, are JSON. Errors have the shape `{ "error": "<message>" }`.
+
+### POST /chat
+
+Request:
+
+    { "query": "How do I rotate the API keys?" }
+
+The query is trimmed and must be non-empty and at most 2000 characters.
+
+Response (200):
+
+    {
+      "answer": "…",
+      "sources": [
+        { "documentId": "<uuid>", "snippet": "first 150 characters of the matching chunk…" }
+      ]
+    }
+
+Up to 5 of the most similar chunks are retrieved. If none are found, the model is not called and the answer says no relevant documents were found, with an empty `sources` array.
+
+| Status | When |
+| --- | --- |
+| 400 | `query` missing, blank, not a string or longer than 2000 characters; body is not valid JSON |
+| 413 | Request body is larger than Express's default JSON limit (100 KB) |
+| 404 | Unknown route or method |
+| 502 | Bedrock or Postgres failed while answering |
+
+### GET /health
+
+Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or the database.
+
 ## Infrastructure deployment
 
     cd infra
