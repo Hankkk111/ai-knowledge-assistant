@@ -4,11 +4,29 @@ import { handleChat } from "./handlers/chat";
 const app = express();
 app.use(express.json());
 
-app.post("/chat", handleChat);
+/**
+ * Answers requests that hit a known route with an unsupported method (e.g.
+ * `GET /chat`) with 405 and an `Allow` header, instead of letting them fall
+ * through to the 404 handler as if the route did not exist.
+ */
+export function methodNotAllowed(allowed: string[]) {
+  const allow = allowed.join(", ");
+  return (req: Request, res: Response) => {
+    res
+      .status(405)
+      .set("Allow", allow)
+      .json({ error: `method ${req.method} not allowed on ${req.path}; use ${allow}` });
+  };
+}
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+app.route("/chat").post(handleChat).all(methodNotAllowed(["POST"]));
+
+app
+  .route("/health")
+  .get((_req, res) => {
+    res.json({ status: "ok" });
+  })
+  .all(methodNotAllowed(["GET", "HEAD"]));
 
 // Unknown routes would otherwise get Express's default HTML "Cannot GET /x"
 // page. Keep every response from this API JSON, including 404s.

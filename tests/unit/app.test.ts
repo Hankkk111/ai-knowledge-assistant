@@ -52,16 +52,28 @@ describe("app error handling", () => {
     assert.deepEqual(await res.json(), { error: "query is required" });
   });
 
+  test("wrong method on /chat returns a 405 JSON error with an Allow header", async () => {
+    const res = await fetch(`${baseUrl}/chat`);
+    assert.equal(res.status, 405);
+    assert.equal(res.headers.get("allow"), "POST");
+    assert.deepEqual(await res.json(), { error: "method GET not allowed on /chat; use POST" });
+  });
+
+  test("wrong method on /health returns a 405 JSON error", async () => {
+    const res = await fetch(`${baseUrl}/health`, { method: "DELETE" });
+    assert.equal(res.status, 405);
+    assert.equal(res.headers.get("allow"), "GET, HEAD");
+  });
+
+  test("HEAD /health is still served by the GET route", async () => {
+    const res = await fetch(`${baseUrl}/health`, { method: "HEAD" });
+    assert.equal(res.status, 200);
+  });
+
   test("unknown route returns a 404 JSON error", async () => {
     const res = await fetch(`${baseUrl}/does-not-exist`);
     assert.equal(res.status, 404);
     assert.match(res.headers.get("content-type") ?? "", /application\/json/);
     assert.deepEqual(await res.json(), { error: "route not found: GET /does-not-exist" });
-  });
-
-  test("wrong method on a known path returns a 404 JSON error", async () => {
-    const res = await fetch(`${baseUrl}/chat`);
-    assert.equal(res.status, 404);
-    assert.deepEqual(await res.json(), { error: "route not found: GET /chat" });
   });
 });
