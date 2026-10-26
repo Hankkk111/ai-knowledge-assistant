@@ -51,12 +51,13 @@ async function readErrorMessage(res: Response): Promise<string> {
  * Checks that a successful /chat body has the expected shape before the UI
  * renders it. A proxy or gateway can answer 200 with something else (an HTML
  * page, `{}`), which would otherwise show up as a blank assistant message.
+ * An empty or whitespace-only answer is rejected for the same reason.
  * Malformed source entries are dropped rather than failing the whole answer.
  */
 export function parseChatResponse(body: unknown): ChatResponse {
   const { answer, sources } = (body ?? {}) as { answer?: unknown; sources?: unknown };
 
-  if (typeof answer !== "string") {
+  if (typeof answer !== "string" || answer.trim().length === 0) {
     throw new Error("API response did not contain an answer");
   }
 
