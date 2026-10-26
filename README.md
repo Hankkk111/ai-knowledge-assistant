@@ -55,6 +55,12 @@ Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
     npm test
 
+Frontend unit tests (Vitest, with `fetch` stubbed) and lint:
+
+    cd frontend
+    npm test
+    npm run lint
+
 ## API
 
 All responses, including errors, are JSON. Errors have the shape `{ "error": "<message>" }`.
