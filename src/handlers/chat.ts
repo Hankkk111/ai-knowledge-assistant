@@ -55,7 +55,19 @@ export function createChatHandler(
   return async function handleChat(req: Request, res: Response): Promise<void> {
     const { query } = (req.body ?? {}) as Partial<ChatRequest>;
 
-    if (typeof query !== "string" || query.trim().length === 0) {
+    if (query === undefined || query === null) {
+      res.status(400).json({ error: "query is required" });
+      return;
+    }
+
+    // A number or object would otherwise be reported as "query is required",
+    // which misleads clients that did send a query, just of the wrong type.
+    if (typeof query !== "string") {
+      res.status(400).json({ error: "query must be a string" });
+      return;
+    }
+
+    if (query.trim().length === 0) {
       res.status(400).json({ error: "query is required" });
       return;
     }

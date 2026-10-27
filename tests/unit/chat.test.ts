@@ -104,7 +104,7 @@ describe("POST /chat handler", () => {
   for (const [label, body] of [
     ["missing body", undefined],
     ["missing query", {}],
-    ["non-string query", { query: 42 }],
+    ["null query", { query: null }],
     ["empty query", { query: "" }],
     ["whitespace-only query", { query: "   \t\n" }],
   ] as const) {
@@ -116,6 +116,24 @@ describe("POST /chat handler", () => {
 
       assert.equal(captured.statusCode, 400);
       assert.deepEqual(captured.body, { error: "query is required" });
+      assert.equal(calls.embedText.length, 0, "services must not be called");
+    });
+  }
+
+  for (const [label, query] of [
+    ["number", 42],
+    ["array", ["hello"]],
+    ["object", { text: "hello" }],
+    ["boolean", true],
+  ] as const) {
+    test(`rejects a ${label} query with a type error`, async () => {
+      const { deps, calls } = fakeDeps();
+      const { res, captured } = mockResponse();
+
+      await createChatHandler(deps)(mockRequest({ query }), res);
+
+      assert.equal(captured.statusCode, 400);
+      assert.deepEqual(captured.body, { error: "query must be a string" });
       assert.equal(calls.embedText.length, 0, "services must not be called");
     });
   }
