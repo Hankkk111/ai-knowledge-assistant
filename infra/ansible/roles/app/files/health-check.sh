@@ -34,20 +34,25 @@ fail() {
 }
 
 # --- 1. HTTP health check ---
+# Use a private temp file: a fixed /tmp path collides when two checks run at
+# once (e.g. cron overlapping a manual run) and is left behind if the script
+# is interrupted.
+RESPONSE_FILE=$(mktemp)
+trap 'rm -f "$RESPONSE_FILE"' EXIT
+
 log "Checking ${BASE_URL}/health ..."
-HTTP_STATUS=$(curl -s -o /tmp/health_response.json -w "%{http_code}" --max-time 10 "${BASE_URL}/health" || echo "000")
+HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" --max-time 10 "${BASE_URL}/health" || echo "000")
 
 if [[ "$HTTP_STATUS" != "200" ]]; then
   fail "Health endpoint returned HTTP ${HTTP_STATUS} (expected 200)"
 else
-  STATUS_FIELD=$(grep -o '"status":"[^"]*"' /tmp/health_response.json | cut -d'"' -f4 || echo "")
+  STATUS_FIELD=$(grep -o '"status":"[^"]*"' "$RESPONSE_FILE" | cut -d'"' -f4 || echo "")
   if [[ "$STATUS_FIELD" != "ok" ]]; then
-    fail "Health endpoint body did not report status=ok (got: $(cat /tmp/health_response.json))"
+    fail "Health endpoint body did not report status=ok (got: $(cat "$RESPONSE_FILE"))"
   else
     log "OK: health endpoint responding normally"
   fi
 fi
-rm -f /tmp/health_response.json
 
 # --- 2. systemd service check (only meaningful when run on the host) ---
 if [[ "$CHECK_SERVICE" == "true" ]]; then
