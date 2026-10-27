@@ -78,15 +78,17 @@ Response (200):
     {
       "answer": "…",
       "sources": [
-        { "documentId": "<uuid>", "snippet": "first 150 characters of the matching chunk…" }
+        { "documentId": "<uuid>", "snippet": "preview of the matching chunk…" }
       ]
     }
+
+Each `snippet` is a one-line preview of the chunk: runs of whitespace (line breaks, indentation) are collapsed to single spaces, and text longer than 150 characters is cut at a character boundary and ends with `…`. A document appears once per matching chunk, so the same `documentId` can be listed more than once.
 
 Up to 5 of the most similar chunks are retrieved. If none are found, the model is not called and the answer says no relevant documents were found, with an empty `sources` array.
 
 | Status | When |
 | --- | --- |
-| 400 | `query` missing, blank, not a string or longer than 2000 characters; body is not valid JSON |
+| 400 | `query` missing or blank (`query is required`), not a string (`query must be a string`) or longer than 2000 characters; body is not valid JSON |
 | 413 | Request body is larger than Express's default JSON limit (100 KB) |
 | 404 | Unknown route |
 | 405 | Known route called with the wrong method (e.g. `GET /chat`); the `Allow` header lists the supported ones |
