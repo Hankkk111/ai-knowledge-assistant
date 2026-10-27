@@ -2,6 +2,9 @@ import express, { type NextFunction, type Request, type Response } from "express
 import { handleChat } from "./handlers/chat";
 
 const app = express();
+// Don't advertise the framework (and, indirectly, its version range) in an
+// `X-Powered-By: Express` header on every response.
+app.disable("x-powered-by");
 app.use(express.json());
 
 /**

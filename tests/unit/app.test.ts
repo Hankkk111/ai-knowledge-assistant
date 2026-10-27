@@ -32,6 +32,11 @@ describe("app error handling", () => {
     assert.deepEqual(await res.json(), { status: "ok" });
   });
 
+  test("responses do not advertise the framework in X-Powered-By", async () => {
+    const res = await fetch(`${baseUrl}/health`);
+    assert.equal(res.headers.get("x-powered-by"), null);
+  });
+
   test("malformed JSON body returns a 400 JSON error", async () => {
     const res = await postChat('{"query": "unterminated');
     assert.equal(res.status, 400);
