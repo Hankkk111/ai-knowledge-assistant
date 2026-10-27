@@ -41,7 +41,10 @@ RESPONSE_FILE=$(mktemp)
 trap 'rm -f "$RESPONSE_FILE"' EXIT
 
 log "Checking ${BASE_URL}/health ..."
-HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" --max-time 10 "${BASE_URL}/health" || echo "000")
+# On a connection failure curl already prints "000" for %{http_code} before
+# exiting non-zero, so only fall back to "000" when it printed nothing.
+HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" --max-time 10 "${BASE_URL}/health" || true)
+HTTP_STATUS="${HTTP_STATUS:-000}"
 
 if [[ "$HTTP_STATUS" != "200" ]]; then
   fail "Health endpoint returned HTTP ${HTTP_STATUS} (expected 200)"
