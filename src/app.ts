@@ -5,7 +5,12 @@ const app = express();
 // Don't advertise the framework (and, indirectly, its version range) in an
 // `X-Powered-By: Express` header on every response.
 app.disable("x-powered-by");
-app.use(express.json());
+// A /chat body is a query of at most MAX_QUERY_LENGTH (2000) UTF-16 units, so
+// even with every unit escaped as \uXXXX (6 bytes) it stays below 16kb. The
+// express.json() default of 100kb would make the server buffer and parse
+// several times more than any valid request needs before rejecting it.
+export const JSON_BODY_LIMIT = "16kb";
+app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
 /**
  * Answers requests that hit a known route with an unsupported method (e.g.

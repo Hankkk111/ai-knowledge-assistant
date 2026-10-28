@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import app from "../../src/app";
+import { MAX_QUERY_LENGTH } from "../../src/handlers/chat";
 
 let server: Server;
 let baseUrl: string;
@@ -45,10 +46,20 @@ describe("app error handling", () => {
   });
 
   test("oversized JSON body returns a 413 JSON error", async () => {
-    // express.json() defaults to a 100kb limit
-    const res = await postChat(JSON.stringify({ query: "x".repeat(200 * 1024) }));
+    const res = await postChat(JSON.stringify({ query: "x".repeat(20 * 1024) }));
     assert.equal(res.status, 413);
     assert.deepEqual(await res.json(), { error: "request body is too large" });
+  });
+
+  test("a maximum-length query fully escaped as \\uXXXX fits within the body limit", async () => {
+    // MAX_QUERY_LENGTH counts UTF-16 units and each escapes to 6 bytes, so
+    // this is the largest body a valid request can produce. The query is
+    // wrapped in an array so the handler rejects it (400) without calling
+    // Bedrock; a 413 would mean the body parser refused it first.
+    const body = `{"query":["${"\\u00e9".repeat(MAX_QUERY_LENGTH)}"]}`;
+    const res = await postChat(body);
+    assert.equal(res.status, 400);
+    assert.deepEqual(await res.json(), { error: "query must be a string" });
   });
 
   test("missing query is still validated by the chat handler", async () => {

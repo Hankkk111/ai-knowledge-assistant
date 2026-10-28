@@ -89,7 +89,7 @@ Up to 5 of the most similar chunks are retrieved. If none are found, the model i
 | Status | When |
 | --- | --- |
 | 400 | `query` missing or blank (`query is required`), not a string (`query must be a string`) or longer than 2000 characters; body is not valid JSON |
-| 413 | Request body is larger than Express's default JSON limit (100 KB) |
+| 413 | Request body is larger than the 16 KB JSON limit (far above the largest valid query) |
 | 404 | Unknown route |
 | 405 | Known route called with the wrong method (e.g. `GET /chat`); the `Allow` header lists the supported ones |
 | 502 | Bedrock or Postgres failed while answering |
