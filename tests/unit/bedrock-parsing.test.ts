@@ -91,6 +91,19 @@ describe("parseAnswerResponse", () => {
       /generated text/
     );
   });
+
+  test("marks an answer cut off by the token limit with an ellipsis", () => {
+    const body = {
+      content: [{ type: "text", text: "The policy covers three cases: first, " }],
+      stop_reason: "max_tokens",
+    };
+    assert.equal(parseAnswerResponse(body), "The policy covers three cases: first,…");
+  });
+
+  test("leaves a complete answer unchanged", () => {
+    const body = { content: [{ type: "text", text: "Done. " }], stop_reason: "end_turn" };
+    assert.equal(parseAnswerResponse(body), "Done. ");
+  });
 });
 
 describe("buildAnswerRequest", () => {
