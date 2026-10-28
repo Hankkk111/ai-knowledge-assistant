@@ -1,5 +1,5 @@
 import { InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-import { bedrockClient as client } from "./bedrockClient";
+import { bedrockClient as client, decodeJsonBody } from "./bedrockClient";
 
 export const EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v2:0";
 
@@ -60,6 +60,6 @@ export async function embedText(text: string): Promise<number[]> {
   });
 
   const response = await client.send(command);
-  const body = JSON.parse(new TextDecoder().decode(response.body));
+  const body = decodeJsonBody(response.body, EMBEDDING_MODEL_ID);
   return parseEmbeddingResponse(body);
 }

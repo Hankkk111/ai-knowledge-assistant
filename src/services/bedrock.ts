@@ -1,5 +1,5 @@
 import { InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-import { bedrockClient as client } from "./bedrockClient";
+import { bedrockClient as client, decodeJsonBody } from "./bedrockClient";
 
 /**
  * Extracts the generated text from an Anthropic Messages response body.
@@ -82,6 +82,6 @@ export async function generateAnswer(query: string, context: string): Promise<st
   });
 
   const response = await client.send(command);
-  const body = JSON.parse(new TextDecoder().decode(response.body));
+  const body = decodeJsonBody(response.body, ANSWER_MODEL_ID);
   return parseAnswerResponse(body);
 }
