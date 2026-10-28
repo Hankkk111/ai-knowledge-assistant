@@ -1,5 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Request, Response } from "express";
 import {
   buildSnippet,
@@ -145,6 +147,16 @@ describe("POST /chat handler", () => {
     await createChatHandler(deps)(mockRequest({ query: "a".repeat(MAX_QUERY_LENGTH) }), res);
 
     assert.equal(captured.statusCode, 200);
+  });
+
+  test("the frontend enforces the same MAX_QUERY_LENGTH as the API", () => {
+    // The chat input caps questions at frontend/src/api.ts's copy of this
+    // limit. If the two drift apart, users either get a 400 for a question
+    // the UI accepted or can't type a question the API would accept.
+    const frontendApi = readFileSync(join(__dirname, "../../frontend/src/api.ts"), "utf8");
+    const match = frontendApi.match(/export const MAX_QUERY_LENGTH = (\d+);/);
+    assert.ok(match, "frontend/src/api.ts should export MAX_QUERY_LENGTH");
+    assert.equal(Number(match[1]), MAX_QUERY_LENGTH);
   });
 
   test("rejects a query longer than MAX_QUERY_LENGTH with 400", async () => {
