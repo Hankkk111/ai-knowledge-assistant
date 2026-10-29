@@ -93,6 +93,30 @@ describe("POST /chat handler", () => {
     assert.equal(calls.generateAnswer.length, 0);
   });
 
+  test("ignores chunks with blank content", async () => {
+    const { deps, calls } = fakeDeps({
+      findRelevantChunks: async () => [chunk("doc-a", "Refunds take 5 days."), chunk("doc-b", " \n\t")],
+    });
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "How long do refunds take?" }), res);
+
+    assert.deepEqual((captured.body as { sources: unknown[] }).sources, [
+      { documentId: "doc-a", snippet: "Refunds take 5 days." },
+    ]);
+    assert.equal(calls.generateAnswer[0][1], "Refunds take 5 days.");
+  });
+
+  test("does not call the model when every retrieved chunk is blank", async () => {
+    const { deps, calls } = fakeDeps({ findRelevantChunks: async () => [chunk("doc-a", "   ")] });
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "What is our refund policy?" }), res);
+
+    assert.deepEqual(captured.body, { answer: NO_CONTEXT_ANSWER, sources: [] });
+    assert.equal(calls.generateAnswer.length, 0);
+  });
+
   test("trims whitespace before embedding and generating", async () => {
     const { deps, calls } = fakeDeps();
     const { res } = mockResponse();

@@ -86,7 +86,12 @@ export function createChatHandler(
     // until the Lambda times out. Catch it here and return a clear error.
     try {
       const queryEmbedding = await deps.embedText(trimmedQuery);
-      const chunks = await deps.findRelevantChunks(queryEmbedding);
+      // A chunk whose content is empty or only whitespace adds nothing to the
+      // prompt and would be listed as a source with a blank snippet, so it
+      // must not count as relevant context.
+      const chunks = (await deps.findRelevantChunks(queryEmbedding)).filter(
+        (c) => c.content.trim().length > 0
+      );
 
       if (chunks.length === 0) {
         res.json({ answer: NO_CONTEXT_ANSWER, sources: [] } satisfies ChatResponse);
