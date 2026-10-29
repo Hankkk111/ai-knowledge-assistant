@@ -38,9 +38,12 @@ export class ApiError extends Error {
 
 async function readErrorMessage(res: Response): Promise<string> {
   try {
-    const body: unknown = await res.json();
-    const error = (body as { error?: unknown } | null)?.error;
-    if (typeof error === "string" && error.trim()) return error;
+    const body = (await res.json()) as { error?: unknown; message?: unknown } | null;
+    // Our API reports `{ "error": "..." }`. API Gateway's own responses (e.g.
+    // a 429 when the stage is throttled) use `{ "message": "..." }` instead.
+    for (const text of [body?.error, body?.message]) {
+      if (typeof text === "string" && text.trim()) return text;
+    }
   } catch {
     // Non-JSON body (e.g. a gateway error page); fall through.
   }

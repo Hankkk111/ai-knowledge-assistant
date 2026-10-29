@@ -76,6 +76,15 @@ describe("sendMessage", () => {
     expect(error).toMatchObject({ status: 400, message: "query is required" });
   });
 
+  test("uses API Gateway's message field when there is no error field", async () => {
+    stubFetch(Response.json({ message: "Too Many Requests" }, { status: 429 }));
+
+    await expect(sendMessage("hi")).rejects.toMatchObject({
+      status: 429,
+      message: "Too Many Requests",
+    });
+  });
+
   test("falls back to the status code when the error body is not JSON", async () => {
     stubFetch(new Response("<html>Bad Gateway</html>", { status: 502 }));
 
