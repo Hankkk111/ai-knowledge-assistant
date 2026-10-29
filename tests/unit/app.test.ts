@@ -68,6 +68,26 @@ describe("app error handling", () => {
     assert.deepEqual(await res.json(), { error: "query is required" });
   });
 
+  test("a /chat body that is not JSON returns a 415 JSON error", async () => {
+    const res = await fetch(`${baseUrl}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: '{"query":"what is RAG?"}',
+    });
+    assert.equal(res.status, 415);
+    assert.deepEqual(await res.json(), { error: "Content-Type must be application/json" });
+  });
+
+  test("a JSON content type with a charset is accepted", async () => {
+    const res = await fetch(`${baseUrl}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: "{}",
+    });
+    assert.equal(res.status, 400);
+    assert.deepEqual(await res.json(), { error: "query is required" });
+  });
+
   test("wrong method on /chat returns a 405 JSON error with an Allow header", async () => {
     const res = await fetch(`${baseUrl}/chat`);
     assert.equal(res.status, 405);

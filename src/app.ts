@@ -27,7 +27,21 @@ export function methodNotAllowed(allowed: string[]) {
   };
 }
 
-app.route("/chat").post(handleChat).all(methodNotAllowed(["POST"]));
+/**
+ * Rejects a request body that is not JSON with 415. express.json() silently
+ * skips other content types, so e.g. a form post or a curl call without
+ * `-H "Content-Type: application/json"` reached the handler with an empty
+ * body and got a misleading "query is required".
+ */
+export function requireJsonBody(req: Request, res: Response, next: NextFunction) {
+  if (!req.is("application/json")) {
+    res.status(415).json({ error: "Content-Type must be application/json" });
+    return;
+  }
+  next();
+}
+
+app.route("/chat").post(requireJsonBody, handleChat).all(methodNotAllowed(["POST"]));
 
 app
   .route("/health")
