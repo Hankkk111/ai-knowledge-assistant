@@ -1,3 +1,5 @@
+import type { Source } from "./types";
+
 const DEPLOYED_API_BASE = "https://xum7phmpeg.execute-api.us-east-1.amazonaws.com";
 
 /**
@@ -35,7 +37,7 @@ export class RequestTimeoutError extends Error {
 
 export interface ChatResponse {
   answer: string;
-  sources: Array<{ documentId: string; snippet: string }>;
+  sources: Source[];
 }
 
 /**
@@ -82,7 +84,7 @@ export function parseChatResponse(body: unknown): ChatResponse {
 
   const validSources = Array.isArray(sources)
     ? sources.filter(
-        (s): s is ChatResponse["sources"][number] =>
+        (s): s is Source =>
           typeof s === "object" &&
           s !== null &&
           typeof (s as { documentId?: unknown }).documentId === "string" &&
