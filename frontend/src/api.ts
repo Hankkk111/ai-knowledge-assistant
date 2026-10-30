@@ -17,6 +17,22 @@ const API_BASE = (
  */
 export const MAX_QUERY_LENGTH = 2000;
 
+/**
+ * How long to wait for /chat before giving up. The Lambda behind the API is
+ * limited to 30 seconds (infra/lambda.tf), so a request still pending well
+ * after that is stuck (e.g. a dropped connection) and would otherwise leave
+ * the UI on "searching…" indefinitely.
+ */
+export const REQUEST_TIMEOUT_MS = 45_000;
+
+/** Thrown when /chat does not respond within the timeout. */
+export class RequestTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`The request timed out after ${timeoutMs / 1000} seconds`);
+    this.name = "RequestTimeoutError";
+  }
+}
+
 export interface ChatResponse {
   answer: string;
   sources: Array<{ documentId: string; snippet: string }>;
@@ -77,12 +93,24 @@ export function parseChatResponse(body: unknown): ChatResponse {
   return { answer, sources: validSources };
 }
 
-export async function sendMessage(query: string): Promise<ChatResponse> {
-  const res = await fetch(`${API_BASE}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
-  });
+export async function sendMessage(
+  query: string,
+  timeoutMs: number = REQUEST_TIMEOUT_MS
+): Promise<ChatResponse> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "TimeoutError") {
+      throw new RequestTimeoutError(timeoutMs);
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     throw new ApiError(res.status, await readErrorMessage(res));

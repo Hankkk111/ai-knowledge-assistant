@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ApiError, parseChatResponse, sendMessage } from "./api";
+import { ApiError, RequestTimeoutError, parseChatResponse, sendMessage } from "./api";
 
 describe("parseChatResponse", () => {
   test("returns the answer and sources of a valid body", () => {
@@ -98,5 +98,29 @@ describe("sendMessage", () => {
     stubFetch(new Response("<html>ok</html>", { status: 200 }));
 
     await expect(sendMessage("hi")).rejects.toThrow("API response was not valid JSON");
+  });
+
+  test("passes an abort signal so a hung request can time out", async () => {
+    const fetchMock = stubFetch(Response.json({ answer: "Paris", sources: [] }));
+
+    await sendMessage("hi");
+
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  test("throws a RequestTimeoutError when the API does not respond in time", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+          })
+      )
+    );
+
+    const error = await sendMessage("hi", 10).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RequestTimeoutError);
+    expect(error).toMatchObject({ message: "The request timed out after 0.01 seconds" });
   });
 });
