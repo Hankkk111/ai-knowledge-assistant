@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // The tests use String.prototype.isWellFormed (ES2024, Node 20+).
+    "lib": ["ES2024"],
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "tests/unit/**/*"]
+}

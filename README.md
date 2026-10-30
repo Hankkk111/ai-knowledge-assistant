@@ -55,6 +55,10 @@ Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
     npm test
 
+Type-check the backend and its unit tests (tsx runs the tests without type-checking them):
+
+    npm run typecheck
+
 Frontend unit tests (Vitest, with `fetch` stubbed) and lint:
 
     cd frontend

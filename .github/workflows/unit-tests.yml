@@ -18,6 +18,8 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+      # tsx runs the tests without type-checking them, so check them here.
+      - run: npm run typecheck
       - run: npm test
 
   frontend-lint-and-build:
