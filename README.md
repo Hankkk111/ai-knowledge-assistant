@@ -111,6 +111,7 @@ Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or th
 - src/app.ts, Express app definition
 - src/index.ts, local dev entry point
 - src/port.ts, dev server port selection
+- src/shutdown.ts, graceful SIGTERM/SIGINT shutdown for the dev server
 - src/lambda.ts, AWS Lambda entry point
 - src/handlers/chat.ts, chat request handler
 - src/services/bedrock.ts, Claude generation via Bedrock
