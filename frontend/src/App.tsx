@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Message } from "./types";
 import { ApiError, MAX_QUERY_LENGTH, RequestTimeoutError, sendMessage } from "./api";
+import { formatMessageCount } from "./format";
 
 // Show the remaining-characters hint once the query gets close to the limit.
 const LENGTH_HINT_THRESHOLD = MAX_QUERY_LENGTH - 200;
@@ -57,7 +58,7 @@ export default function App() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <h1 className="font-serif text-lg tracking-tight">Knowledge Assistant</h1>
           <span className="text-xs text-paper/50 font-mono">
-            {messages.length === 0 ? "ready" : `${messages.length} messages`}
+            {formatMessageCount(messages.length)}
           </span>
         </div>
       </header>
