@@ -37,6 +37,9 @@ export default function App() {
         { role: "assistant", content: res.answer, sources: res.sources },
       ]);
     } catch (err) {
+      // Put the question back in the box so it can be retried or edited
+      // without retyping it, unless the user has already started a new one.
+      setInput((current) => (current.length > 0 ? current : query));
       // 4xx responses carry a specific reason from the API (e.g. the query is
       // too long); show it so the user knows what to change. Anything else is
       // a network or server failure.
