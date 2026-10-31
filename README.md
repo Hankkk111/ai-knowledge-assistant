@@ -51,6 +51,8 @@ Configuration, all optional (defaults match the local setup above):
 | DB_USER / DB_PASSWORD | postgres / postgres | Postgres credentials |
 | BEDROCK_REGION | us-east-1 | Region for Bedrock embedding and generation calls |
 
+PORT and DB_PORT must be a plain decimal number from 1 to 65535. Any other value (blank, `abc`, `70000`, `0x1538`, `5432.0`) is ignored and the default is used. A blank BEDROCK_REGION also falls back to the default.
+
 Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
     npm test
