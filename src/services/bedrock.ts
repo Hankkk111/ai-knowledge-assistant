@@ -68,10 +68,12 @@ export function escapeContextTags(text: string): string {
 /**
  * Builds the Anthropic Messages request body for a grounded answer. The
  * retrieved context is wrapped in <context> tags so the model can tell it
- * apart from the user's question.
+ * apart from the user's question. Context tags in the question are escaped
+ * too, so a question can't open a second <context> block and have its own
+ * text treated as if it came from the indexed documents.
  */
 export function buildAnswerRequest(query: string, context: string): string {
-  const prompt = `<context>\n${escapeContextTags(context)}\n</context>\n\nQuestion: ${query}`;
+  const prompt = `<context>\n${escapeContextTags(context)}\n</context>\n\nQuestion: ${escapeContextTags(query)}`;
 
   return JSON.stringify({
     anthropic_version: "bedrock-2023-05-31",
