@@ -29,9 +29,13 @@ test("buildPoolConfig reads connection settings from the environment", () => {
 });
 
 test("buildPoolConfig falls back to the default port for invalid DB_PORT values", () => {
-  for (const value of ["abc", "0", "-1", "70000", "54.3", ""]) {
+  for (const value of ["abc", "0", "-1", "70000", "54.3", "", "0x1538", "1e3", "5432.0"]) {
     assert.equal(buildPoolConfig({ DB_PORT: value }).port, DEFAULT_DB_PORT, `DB_PORT=${value}`);
   }
+});
+
+test("buildPoolConfig ignores surrounding whitespace in DB_PORT", () => {
+  assert.equal(buildPoolConfig({ DB_PORT: " 5432 " }).port, 5432);
 });
 
 test("an idle client error on the pool is logged instead of crashing the process", (t) => {

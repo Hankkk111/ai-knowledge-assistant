@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_PORT, describeListenError, resolvePort } from "../../src/port";
+import { DEFAULT_PORT, describeListenError, parsePort, resolvePort } from "../../src/port";
 
 test("resolvePort defaults to 3000 when PORT is unset or blank", () => {
   assert.equal(DEFAULT_PORT, 3000);
@@ -23,6 +23,14 @@ test("resolvePort falls back to the default for invalid PORT values", () => {
 function errnoError(code: string): NodeJS.ErrnoException {
   return Object.assign(new Error(code), { code });
 }
+
+test("parsePort accepts only decimal ports in 1-65535", () => {
+  assert.equal(parsePort("1"), 1);
+  assert.equal(parsePort(" 65535 "), 65535);
+  for (const value of [undefined, "", "0", "65536", "0x1538", "1e3", "5432.0", "-1"]) {
+    assert.equal(parsePort(value), undefined, `value=${value}`);
+  }
+});
 
 test("describeListenError explains a port that is already in use", () => {
   assert.match(describeListenError(errnoError("EADDRINUSE"), 3000) ?? "", /Port 3000 is already in use/);
