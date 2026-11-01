@@ -35,6 +35,23 @@ export function buildSnippet(content: string, maxLength: number = SNIPPET_LENGTH
   return `${codePoints.slice(0, maxLength).join("").trimEnd()}…`;
 }
 
+/**
+ * Drops chunks whose document and text repeat an earlier chunk (ignoring
+ * whitespace differences), keeping the first, i.e. most relevant, copy.
+ * Re-ingesting a document without deleting its old rows stores every chunk
+ * twice; both copies are retrieved together, which repeats the same text in
+ * the prompt and lists the same source twice in the response.
+ */
+export function dedupeChunks<T extends { documentId: string; content: string }>(chunks: T[]): T[] {
+  const seen = new Set<string>();
+  return chunks.filter((c) => {
+    const key = `${c.documentId}\u0000${c.content.replace(/\s+/g, " ").trim()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 // External services the chat pipeline depends on. Injectable so the handler
 // can be unit-tested without calling Bedrock or Postgres.
 export interface ChatDependencies {
@@ -89,8 +106,10 @@ export function createChatHandler(
       // A chunk whose content is empty or only whitespace adds nothing to the
       // prompt and would be listed as a source with a blank snippet, so it
       // must not count as relevant context.
-      const chunks = (await deps.findRelevantChunks(queryEmbedding)).filter(
-        (c) => c.content.trim().length > 0
+      const chunks = dedupeChunks(
+        (await deps.findRelevantChunks(queryEmbedding)).filter(
+          (c) => c.content.trim().length > 0
+        )
       );
 
       if (chunks.length === 0) {

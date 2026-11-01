@@ -6,6 +6,7 @@ import type { Request, Response } from "express";
 import {
   buildSnippet,
   createChatHandler,
+  dedupeChunks,
   MAX_QUERY_LENGTH,
   SNIPPET_LENGTH,
   NO_CONTEXT_ANSWER,
@@ -246,5 +247,38 @@ describe("buildSnippet", () => {
 
   test("drops trailing whitespace before the ellipsis", () => {
     assert.equal(buildSnippet("abc def", 4), "abc…");
+  });
+});
+
+describe("dedupeChunks", () => {
+  test("keeps the first copy of a chunk repeated within the same document", () => {
+    const first = chunk("doc-a", "Refunds take 5 days.");
+    const result = dedupeChunks([
+      first,
+      chunk("doc-b", "Other text."),
+      chunk("doc-a", "  Refunds   take 5 days.\n"),
+    ]);
+    assert.deepEqual(result.map((c) => c.documentId), ["doc-a", "doc-b"]);
+    assert.equal(result[0], first);
+  });
+
+  test("keeps identical text that comes from different documents", () => {
+    const result = dedupeChunks([chunk("doc-a", "Same."), chunk("doc-b", "Same.")]);
+    assert.equal(result.length, 2);
+  });
+
+  test("the handler sends duplicated chunks to the model and sources only once", async () => {
+    const { deps, calls } = fakeDeps({
+      findRelevantChunks: async () => [
+        chunk("doc-a", "Refunds take 5 days."),
+        chunk("doc-a", "Refunds take 5 days."),
+      ],
+    });
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "refunds?" }), res);
+
+    assert.equal(calls.generateAnswer[0][1], "Refunds take 5 days.");
+    assert.equal((captured.body as { sources: unknown[] }).sources.length, 1);
   });
 });
