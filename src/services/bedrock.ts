@@ -59,10 +59,15 @@ export const ANSWER_SYSTEM_PROMPT = [
  * Indexed documents are untrusted input: a chunk containing a literal
  * "</context>" would otherwise close the context block early, and whatever
  * follows it would read to the model as part of the user's turn rather than
- * as reference material.
+ * as reference material. Variants a model would still read as the same tag,
+ * such as `<context id="2">` or `< /context>`, are escaped too, while tags
+ * that merely start with "context" (e.g. `<contextual>`) are left alone.
  */
 export function escapeContextTags(text: string): string {
-  return text.replace(/<(\/?)(\s*context\s*)>/gi, "&lt;$1$2&gt;");
+  return text.replace(
+    /<(\s*\/?\s*context\b[^<>]*)>/gi,
+    "&lt;$1&gt;"
+  );
 }
 
 /**
