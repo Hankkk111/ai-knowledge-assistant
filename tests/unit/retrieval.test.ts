@@ -4,6 +4,7 @@ import {
   findRelevantChunks,
   DEFAULT_CHUNK_LIMIT,
   MAX_CHUNK_LIMIT,
+  normalizeMetadata,
   type Queryable,
 } from "../../src/services/retrieval";
 
@@ -77,5 +78,29 @@ describe("findRelevantChunks", () => {
     const { db, calls } = fakeDb();
     await findRelevantChunks([1], MAX_CHUNK_LIMIT, db);
     assert.equal(calls[0].values[1], MAX_CHUNK_LIMIT);
+  });
+});
+
+describe("normalizeMetadata", () => {
+  test("keeps object metadata as is", () => {
+    assert.deepEqual(normalizeMetadata({ page: 2, tags: ["a"] }), { page: 2, tags: ["a"] });
+  });
+
+  for (const [label, value] of [
+    ["null", null],
+    ["undefined", undefined],
+    ["an array", ["a", "b"]],
+    ["a string", "pdf"],
+    ["a number", 3],
+  ] as Array<[string, unknown]>) {
+    test(`replaces ${label} with an empty object`, () => {
+      assert.deepEqual(normalizeMetadata(value), {});
+    });
+  }
+
+  test("findRelevantChunks returns {} for non-object metadata rows", async () => {
+    const { db } = fakeDb([{ id: "c1", document_id: "d1", content: "x", metadata: [1, 2] }]);
+    const [chunk] = await findRelevantChunks([1], 1, db);
+    assert.deepEqual(chunk.metadata, {});
   });
 });

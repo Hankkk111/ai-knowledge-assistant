@@ -11,6 +11,18 @@ export interface Queryable {
   query(text: string, values: unknown[]): Promise<{ rows: any[] }>;
 }
 
+/**
+ * The metadata column is JSONB, which can hold any JSON value, not only an
+ * object: a chunk inserted with `'[]'`, `'"pdf"'` or `'null'` is valid SQL.
+ * DocumentChunk.metadata is typed as an object, so anything else is replaced
+ * with `{}` rather than handed to callers that index into it.
+ */
+export function normalizeMetadata(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 export async function findRelevantChunks(
   queryEmbedding: number[],
   limit: number = DEFAULT_CHUNK_LIMIT,
@@ -48,6 +60,6 @@ export async function findRelevantChunks(
     documentId: row.document_id,
     content: row.content,
     embedding: [],
-    metadata: row.metadata ?? {},
+    metadata: normalizeMetadata(row.metadata),
   }));
 }
