@@ -101,12 +101,14 @@ export default function App() {
             </div>
           ))}
 
+          {/* Announce progress and failures to screen readers, which would
+              otherwise get no feedback after submitting a question. */}
           {loading && (
-            <p className="text-paper/40 font-mono text-xs">searching…</p>
+            <p role="status" className="text-paper/40 font-mono text-xs">searching…</p>
           )}
 
           {error && (
-            <p className="text-red-400/80 text-sm">{error}</p>
+            <p role="alert" className="text-red-400/80 text-sm">{error}</p>
           )}
 
           <div ref={bottomRef} />
