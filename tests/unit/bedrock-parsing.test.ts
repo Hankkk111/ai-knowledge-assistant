@@ -46,6 +46,15 @@ describe("parseEmbeddingResponse", () => {
     assert.match(schema, new RegExp(`embedding vector\\(${EMBEDDING_DIMENSIONS}\\)`));
   });
 
+  test("schema.sql can be re-run without 'already exists' errors", () => {
+    const schema = readFileSync(join(__dirname, "../../src/db/schema.sql"), "utf8");
+    const statements = schema.match(/^CREATE\b[^;]*/gim) ?? [];
+    assert.ok(statements.length > 0);
+    for (const statement of statements) {
+      assert.match(statement, /^CREATE (EXTENSION|TABLE|INDEX) IF NOT EXISTS /i, statement);
+    }
+  });
+
   for (const [name, body] of [
     ["null body", null],
     ["missing embedding", { inputTextTokenCount: 3 }],
