@@ -41,6 +41,12 @@ Database, requires Docker:
 
     docker run -d --name ai-knowledge-pg -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=ai_knowledge_assistant -p 5433:5432 pgvector/pgvector:pg16
 
+Then create the pgvector extension, the document_chunks table and its index (give the container a few seconds to start first). The script only creates what is missing, so it is safe to run again:
+
+    docker exec -i ai-knowledge-pg psql -U postgres -d ai_knowledge_assistant < src/db/schema.sql
+
+/chat answers "I couldn't find any indexed documents relevant to that question." until document_chunks contains rows with an embedding.
+
 Configuration, all optional (defaults match the local setup above):
 
 | Variable | Default | Used for |
