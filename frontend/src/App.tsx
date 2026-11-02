@@ -84,7 +84,10 @@ export default function App() {
                 </p>
               ) : (
                 <div>
-                  <p className="font-serif text-lg leading-relaxed text-paper">
+                  {/* Answers often come back as paragraphs or numbered
+                      lists; keep their line breaks instead of letting HTML
+                      collapse them into one block of text. */}
+                  <p className="font-serif text-lg leading-relaxed text-paper whitespace-pre-line">
                     {msg.content}
                   </p>
                   {msg.sources && msg.sources.length > 0 && (
