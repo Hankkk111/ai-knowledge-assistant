@@ -4,6 +4,16 @@ import { parsePort } from "../port";
 export const DEFAULT_DB_PORT = 5433;
 
 /**
+ * How long to wait for a new Postgres connection, and for a single query,
+ * before failing. pg waits indefinitely by default, so an unreachable or
+ * stalled database would hang /chat until the 30-second Lambda timeout
+ * (infra/lambda.tf) and API Gateway would answer with a generic 503 instead
+ * of the handler's JSON 502. Failing fast leaves time to report the error.
+ */
+export const DB_CONNECTION_TIMEOUT_MS = 5_000;
+export const DB_QUERY_TIMEOUT_MS = 10_000;
+
+/**
  * Builds the Postgres pool config from environment variables, falling back to
  * the local Docker defaults from the README. An invalid DB_PORT (anything but
  * a plain decimal integer in 1-65535, so also "0x1538" or "1e3") is ignored
@@ -16,6 +26,8 @@ export function buildPoolConfig(env: NodeJS.ProcessEnv = process.env): PoolConfi
     database: env.DB_NAME || "ai_knowledge_assistant",
     user: env.DB_USER || "postgres",
     password: env.DB_PASSWORD || "postgres",
+    connectionTimeoutMillis: DB_CONNECTION_TIMEOUT_MS,
+    query_timeout: DB_QUERY_TIMEOUT_MS,
   };
 }
 

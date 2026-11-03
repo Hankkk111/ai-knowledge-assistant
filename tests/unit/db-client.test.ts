@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_DB_PORT, buildPoolConfig, pool } from "../../src/db/client";
+import {
+  DB_CONNECTION_TIMEOUT_MS,
+  DB_QUERY_TIMEOUT_MS,
+  DEFAULT_DB_PORT,
+  buildPoolConfig,
+  pool,
+} from "../../src/db/client";
 
 test("buildPoolConfig uses the local Docker defaults when nothing is set", () => {
   assert.deepEqual(buildPoolConfig({}), {
@@ -9,7 +15,18 @@ test("buildPoolConfig uses the local Docker defaults when nothing is set", () =>
     database: "ai_knowledge_assistant",
     user: "postgres",
     password: "postgres",
+    connectionTimeoutMillis: DB_CONNECTION_TIMEOUT_MS,
+    query_timeout: DB_QUERY_TIMEOUT_MS,
   });
+});
+
+test("connection and query timeouts leave time to respond before the Lambda times out", () => {
+  const config = buildPoolConfig({});
+  const lambdaTimeoutMs = 30_000;
+
+  assert.ok(config.connectionTimeoutMillis! > 0);
+  assert.ok(config.query_timeout! > 0);
+  assert.ok(config.connectionTimeoutMillis! + config.query_timeout! < lambdaTimeoutMs);
 });
 
 test("buildPoolConfig reads connection settings from the environment", () => {
