@@ -59,6 +59,8 @@ Configuration, all optional (defaults match the local setup above):
 
 PORT and DB_PORT must be a plain decimal number from 1 to 65535. Any other value (blank, `abc`, `70000`, `0x1538`, `5432.0`) is ignored and the default is used. A blank BEDROCK_REGION also falls back to the default.
 
+Postgres connections time out after 5 seconds and individual queries after 10 seconds (DB_CONNECTION_TIMEOUT_MS and DB_QUERY_TIMEOUT_MS in src/db/client.ts), so an unreachable database makes /chat return a 502 well within the 30-second Lambda timeout instead of hanging until API Gateway gives up.
+
 Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
     npm test
@@ -105,7 +107,7 @@ Up to 5 of the most similar chunks are retrieved. If none are found, the model i
 | 415 | Body sent without a `Content-Type: application/json` header |
 | 404 | Unknown route |
 | 405 | Known route called with the wrong method (e.g. `GET /chat`); the `Allow` header lists the supported ones |
-| 502 | Bedrock or Postgres failed while answering |
+| 502 | Bedrock or Postgres failed while answering, including a Postgres connection or query timeout |
 
 ### GET /health
 
