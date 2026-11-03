@@ -136,7 +136,12 @@ Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or th
 - src/db/schema.sql, table and index definitions
 - frontend/src/App.tsx, chat UI
 - frontend/src/api.ts, API client and base URL selection
+- frontend/src/format.ts, display text helpers (message count, characters left, source labels)
+- frontend/src/types.ts, chat message and source types
 - infra/*.tf, Terraform resource definitions
+- tests/unit/*.test.ts, backend unit tests (`npm test`)
+- tests/integration/test_deployment.py, pytest checks against a running deployment
+- scripts/health-check.sh, checks a deployment's /health endpoint (run by the health-check workflow)
 
 ## Status
 
