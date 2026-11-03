@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Message } from "./types";
 import { ApiError, MAX_QUERY_LENGTH, RequestTimeoutError, sendMessage } from "./api";
-import { formatCharactersLeft, formatMessageCount } from "./format";
+import { formatCharactersLeft, formatDocumentLabel, formatMessageCount } from "./format";
 
 // Show the remaining-characters hint once the query gets close to the limit.
 const LENGTH_HINT_THRESHOLD = MAX_QUERY_LENGTH - 200;
@@ -94,6 +94,11 @@ export default function App() {
                     <div className="mt-3 border-l-2 border-amber/40 pl-3 flex flex-col gap-1.5">
                       {msg.sources.map((s, j) => (
                         <p key={j} className="text-xs text-paper/50 font-mono leading-relaxed">
+                          {/* Name the document so snippets from different
+                              sources can be told apart. */}
+                          <span className="text-amber/70 mr-2" title={s.documentId}>
+                            {formatDocumentLabel(s.documentId)}
+                          </span>
                           {s.snippet}
                         </p>
                       ))}

@@ -14,3 +14,16 @@ export function formatMessageCount(count: number): string {
 export function formatCharactersLeft(remaining: number): string {
   return `${remaining} ${remaining === 1 ? "character" : "characters"} left`;
 }
+
+/**
+ * Short label for the document a source snippet came from. Document IDs are
+ * UUIDs, which are too long to show next to every snippet, so only the first
+ * block is kept (enough to tell documents apart in one answer); the full ID
+ * stays available as a tooltip. IDs that aren't UUIDs are shown as they are.
+ */
+export function formatDocumentLabel(documentId: string): string {
+  const match = /^([0-9a-f]{8})-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.exec(
+    documentId.trim()
+  );
+  return match ? match[1].toLowerCase() : documentId.trim();
+}
