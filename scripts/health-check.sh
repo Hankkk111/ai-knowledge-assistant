@@ -8,6 +8,7 @@
 #   ./health-check.sh                          # checks localhost:3000
 #   BASE_URL=http://1.2.3.4:3000 ./health-check.sh
 #   ./health-check.sh --remote-service          # also checks systemd (run on the host itself, needs sudo)
+#   ./health-check.sh --help                    # prints usage; unknown arguments exit with status 2
 
 set -euo pipefail
 
@@ -16,10 +17,28 @@ DISK_THRESHOLD_PERCENT=85
 SERVICE_NAME="ai-knowledge-assistant"
 CHECK_SERVICE=false
 
+usage() {
+  echo "Usage: [BASE_URL=http://host:port] $0 [--remote-service]"
+}
+
+# Reject unknown arguments: a typo such as "--remote-services" would otherwise
+# be ignored, silently skipping the systemd and disk checks while still
+# reporting "All checks passed."
 for arg in "$@"; do
-  if [[ "$arg" == "--remote-service" ]]; then
-    CHECK_SERVICE=true
-  fi
+  case "$arg" in
+    --remote-service)
+      CHECK_SERVICE=true
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $arg" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
 done
 
 FAILED=0
