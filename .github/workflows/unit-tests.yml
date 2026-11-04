@@ -41,3 +41,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The health-check workflows run scripts/health-check.sh against the live
+      # deployments, so catch quoting and `set -e` mistakes before they land.
+      # ShellCheck is preinstalled on the GitHub-hosted Ubuntu runners.
+      - run: shellcheck scripts/*.sh
