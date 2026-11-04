@@ -15,5 +15,11 @@ CREATE TABLE IF NOT EXISTS document_chunks (
 
 -- Named so IF NOT EXISTS can match it; an unnamed index would get a fresh
 -- auto-generated name and be duplicated on every run.
+-- HNSW rather than IVFFlat: an IVFFlat index builds its lists from the rows
+-- present when it is created, and this script creates it on an empty table,
+-- so similarity searches would probe untrained lists and miss relevant
+-- chunks. HNSW needs no training data (pgvector 0.5.0+). Re-running this file
+-- does not replace an existing index; drop document_chunks_embedding_idx
+-- first to switch an older database over.
 CREATE INDEX IF NOT EXISTS document_chunks_embedding_idx
-  ON document_chunks USING ivfflat (embedding vector_cosine_ops);
+  ON document_chunks USING hnsw (embedding vector_cosine_ops);

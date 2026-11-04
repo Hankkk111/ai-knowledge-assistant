@@ -46,6 +46,12 @@ describe("parseEmbeddingResponse", () => {
     assert.match(schema, new RegExp(`embedding vector\\(${EMBEDDING_DIMENSIONS}\\)`));
   });
 
+  test("schema.sql uses an HNSW index, which works on an empty table", () => {
+    const schema = readFileSync(join(__dirname, "../../src/db/schema.sql"), "utf8");
+    assert.match(schema, /USING hnsw \(embedding vector_cosine_ops\)/);
+    assert.doesNotMatch(schema, /USING ivfflat/i);
+  });
+
   test("schema.sql can be re-run without 'already exists' errors", () => {
     const schema = readFileSync(join(__dirname, "../../src/db/schema.sql"), "utf8");
     const statements = schema.match(/^CREATE\b[^;]*/gim) ?? [];
