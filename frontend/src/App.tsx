@@ -16,9 +16,13 @@ export default function App() {
   // present the button as clickable for one.
   const canSubmit = !loading && input.trim().length > 0;
 
+  // Also follow the "searching…" indicator and the error message, which are
+  // rendered below the last message: in a long conversation they would
+  // otherwise appear out of view, leaving no visible sign that a question is
+  // being answered or that it failed.
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading, error]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
