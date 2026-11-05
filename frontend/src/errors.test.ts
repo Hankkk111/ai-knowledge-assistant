@@ -1,12 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { ApiError, RequestTimeoutError } from "./api";
-import { describeChatError, TIMEOUT_MESSAGE, UNREACHABLE_MESSAGE } from "./errors";
+import { BUSY_MESSAGE, describeChatError, TIMEOUT_MESSAGE, UNREACHABLE_MESSAGE } from "./errors";
 
 describe("describeChatError", () => {
   it("shows the API's reason for a 4xx response", () => {
     expect(describeChatError(new ApiError(400, "query must be at most 2000 characters"))).toBe(
       "query must be at most 2000 characters"
     );
+  });
+
+  it("asks the user to retry when the request was throttled", () => {
+    expect(describeChatError(new ApiError(429, "Too Many Requests"))).toBe(BUSY_MESSAGE);
+    expect(
+      describeChatError(
+        new ApiError(503, "The assistant is busy right now. Please try again in a few seconds.")
+      )
+    ).toBe(BUSY_MESSAGE);
   });
 
   it("explains a timeout", () => {
