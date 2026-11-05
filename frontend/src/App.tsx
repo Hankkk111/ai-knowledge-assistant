@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Message } from "./types";
-import { ApiError, MAX_QUERY_LENGTH, RequestTimeoutError, sendMessage } from "./api";
+import { MAX_QUERY_LENGTH, sendMessage } from "./api";
+import { describeChatError } from "./errors";
 import { formatCharactersLeft, formatDocumentLabel, formatMessageCount } from "./format";
 
 // Show the remaining-characters hint once the query gets close to the limit.
@@ -44,16 +45,7 @@ export default function App() {
       // Put the question back in the box so it can be retried or edited
       // without retyping it, unless the user has already started a new one.
       setInput((current) => (current.length > 0 ? current : query));
-      // 4xx responses carry a specific reason from the API (e.g. the query is
-      // too long); show it so the user knows what to change. Anything else is
-      // a network or server failure.
-      if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
-        setError(err.message);
-      } else if (err instanceof RequestTimeoutError) {
-        setError("The knowledge base took too long to answer. Please try again.");
-      } else {
-        setError("Couldn't reach the knowledge base. Check the API and try again.");
-      }
+      setError(describeChatError(err));
     } finally {
       setLoading(false);
     }
