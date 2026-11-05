@@ -1,32 +1,32 @@
-# React + TypeScript + Vite
+# Knowledge Assistant frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + TypeScript + Tailwind CSS 4 chat UI for the AI Knowledge Assistant API, built with Vite.
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the Vite dev server with hot reload |
+| `npm run build` | Type-check (`tsc -b`) and build the production bundle into `dist/` |
+| `npm run preview` | Serve the built `dist/` locally |
+| `npm test` | Run the Vitest unit tests (`src/*.test.ts`) |
+| `npm run lint` | Lint with Oxlint (`.oxlintrc.json`) |
 
-## React Compiler
+## Which API it talks to
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The base URL is chosen in `src/api.ts`:
 
-## Expanding the Oxlint configuration
+- `VITE_API_BASE`, when set, is always used (trailing slashes are removed).
+- Otherwise `npm run dev` uses relative paths, and the dev server proxies `/chat` and `/health` to the local backend (`http://localhost:3000`, or `API_PROXY_TARGET` if set; see `vite.config.ts`). Start the backend with `npm run dev` in the repo root first.
+- Production builds call the deployed API Gateway URL.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Example, pointing a local build at another backend:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+    VITE_API_BASE=http://localhost:4000 npm run build
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Source layout
+
+- `src/App.tsx` – the chat page: message list, sources under each answer, input with a remaining-characters hint near the 2000-character limit.
+- `src/api.ts` – `sendMessage()` for `POST /chat`, with a 45-second timeout, `ApiError` for non-2xx responses and validation of the response body.
+- `src/errors.ts` – picks the error message shown to the user (API reason for 4xx, a "busy, try again" message for 429/503, timeout and generic failure messages).
+- `src/format.ts` – small display helpers (message count, characters left, short document labels).
