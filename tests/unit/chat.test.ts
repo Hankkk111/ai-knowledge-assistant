@@ -7,7 +7,9 @@ import {
   buildSnippet,
   createChatHandler,
   dedupeChunks,
+  isThrottlingError,
   MAX_QUERY_LENGTH,
+  THROTTLED_RETRY_AFTER_SECONDS,
   SNIPPET_LENGTH,
   NO_CONTEXT_ANSWER,
   type ChatDependencies,
@@ -17,11 +19,16 @@ import type { DocumentChunk } from "../../src/types";
 interface CapturedResponse {
   statusCode: number;
   body: unknown;
+  headers: Record<string, string>;
 }
 
 function mockResponse(): { res: Response; captured: CapturedResponse } {
-  const captured: CapturedResponse = { statusCode: 200, body: undefined };
+  const captured: CapturedResponse = { statusCode: 200, body: undefined, headers: {} };
   const res = {
+    set(name: string, value: string) {
+      captured.headers[name.toLowerCase()] = value;
+      return this;
+    },
     status(code: number) {
       captured.statusCode = code;
       return this;
@@ -215,6 +222,46 @@ describe("POST /chat handler", () => {
     assert.deepEqual(captured.body, {
       error: "Failed to generate an answer. Please try again later.",
     });
+    assert.equal(captured.headers["retry-after"], undefined);
+  });
+
+  test("returns 503 with Retry-After when Bedrock throttles the request", async (t) => {
+    t.mock.method(console, "error", () => {});
+    const throttled = Object.assign(new Error("Too many requests"), {
+      name: "ThrottlingException",
+      $metadata: { httpStatusCode: 429 },
+    });
+    const { deps } = fakeDeps({
+      generateAnswer: async () => {
+        throw throttled;
+      },
+    });
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "anything" }), res);
+
+    assert.equal(captured.statusCode, 503);
+    assert.equal(captured.headers["retry-after"], String(THROTTLED_RETRY_AFTER_SECONDS));
+    assert.deepEqual(captured.body, {
+      error: "The assistant is busy right now. Please try again in a few seconds.",
+    });
+  });
+});
+
+describe("isThrottlingError", () => {
+  test("recognises ThrottlingException by name", () => {
+    assert.equal(isThrottlingError(Object.assign(new Error("slow down"), { name: "ThrottlingException" })), true);
+  });
+
+  test("recognises any SDK error with HTTP status 429", () => {
+    assert.equal(isThrottlingError({ name: "ServiceQuotaExceededException", $metadata: { httpStatusCode: 429 } }), true);
+  });
+
+  test("does not treat other failures as throttling", () => {
+    assert.equal(isThrottlingError(new Error("connection refused")), false);
+    assert.equal(isThrottlingError({ name: "ValidationException", $metadata: { httpStatusCode: 400 } }), false);
+    assert.equal(isThrottlingError(null), false);
+    assert.equal(isThrottlingError("ThrottlingException"), false);
   });
 });
 

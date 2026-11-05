@@ -52,6 +52,21 @@ export function dedupeChunks<T extends { documentId: string; content: string }>(
   });
 }
 
+// Seconds a client should wait before retrying after Bedrock throttled us.
+export const THROTTLED_RETRY_AFTER_SECONDS = 5;
+
+/**
+ * True when an error from the AWS SDK means Bedrock rejected the call
+ * because of request rate or quota (ThrottlingException, or any response
+ * with HTTP status 429). That is a temporary condition on our side, not a
+ * broken upstream, so it is reported as 503 with Retry-After instead of 502.
+ */
+export function isThrottlingError(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const { name, $metadata } = err as { name?: unknown; $metadata?: { httpStatusCode?: unknown } };
+  return name === "ThrottlingException" || $metadata?.httpStatusCode === 429;
+}
+
 // External services the chat pipeline depends on. Injectable so the handler
 // can be unit-tested without calling Bedrock or Postgres.
 export interface ChatDependencies {
@@ -131,6 +146,13 @@ export function createChatHandler(
       res.json(response);
     } catch (err) {
       console.error("Chat request failed:", err);
+      if (isThrottlingError(err)) {
+        res
+          .status(503)
+          .set("Retry-After", String(THROTTLED_RETRY_AFTER_SECONDS))
+          .json({ error: "The assistant is busy right now. Please try again in a few seconds." });
+        return;
+      }
       res
         .status(502)
         .json({ error: "Failed to generate an answer. Please try again later." });
