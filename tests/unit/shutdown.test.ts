@@ -56,3 +56,55 @@ test("shutdown exits with 1 when closing the pool fails", async (t) => {
   await handler("SIGTERM");
   assert.deepEqual(exitCodes, [1]);
 });
+
+test("shutdown exits with 1 when the server does not close within the timeout", async (t) => {
+  t.mock.method(console, "error", () => {});
+  const calls: string[] = [];
+  const exitCodes: number[] = [];
+  let finishClose: (err?: Error) => void = () => {};
+  const handler = createShutdownHandler({
+    // A request that never finishes keeps server.close() from calling back.
+    server: {
+      close(callback) {
+        calls.push("server.close");
+        finishClose = callback;
+      },
+    },
+    pool: {
+      async end() {
+        calls.push("pool.end");
+      },
+    },
+    log: () => {},
+    exit: (code) => {
+      exitCodes.push(code);
+    },
+    timeoutMs: 20,
+  });
+
+  const pending = handler("SIGTERM");
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.deepEqual(exitCodes, [1]);
+
+  // If the server does close late, it must not report a second exit code.
+  finishClose();
+  await pending;
+  assert.deepEqual(exitCodes, [1]);
+  assert.deepEqual(calls, ["server.close", "pool.end"]);
+});
+
+test("shutdown does not fire the timeout after a clean exit", async () => {
+  const exitCodes: number[] = [];
+  const handler = createShutdownHandler({
+    server: { close: (callback) => callback() },
+    pool: { end: async () => {} },
+    log: () => {},
+    exit: (code) => {
+      exitCodes.push(code);
+    },
+    timeoutMs: 10,
+  });
+  await handler("SIGTERM");
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.deepEqual(exitCodes, [0]);
+});
