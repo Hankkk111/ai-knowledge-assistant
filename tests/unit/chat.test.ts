@@ -257,7 +257,13 @@ describe("isThrottlingError", () => {
     assert.equal(isThrottlingError({ name: "ServiceQuotaExceededException", $metadata: { httpStatusCode: 429 } }), true);
   });
 
+  test("recognises Bedrock being temporarily unavailable (503)", () => {
+    assert.equal(isThrottlingError(Object.assign(new Error("try later"), { name: "ServiceUnavailableException" })), true);
+    assert.equal(isThrottlingError({ name: "UnknownError", $metadata: { httpStatusCode: 503 } }), true);
+  });
+
   test("does not treat other failures as throttling", () => {
+    assert.equal(isThrottlingError({ name: "InternalServerException", $metadata: { httpStatusCode: 500 } }), false);
     assert.equal(isThrottlingError(new Error("connection refused")), false);
     assert.equal(isThrottlingError({ name: "ValidationException", $metadata: { httpStatusCode: 400 } }), false);
     assert.equal(isThrottlingError(null), false);
