@@ -61,6 +61,8 @@ PORT and DB_PORT must be a plain decimal number from 1 to 65535. Any other value
 
 Postgres connections time out after 5 seconds and individual queries after 10 seconds (DB_CONNECTION_TIMEOUT_MS and DB_QUERY_TIMEOUT_MS in src/db/client.ts), so an unreachable database makes /chat return a 502 well within the 30-second Lambda timeout instead of hanging until API Gateway gives up.
 
+Stopping the dev server with Ctrl+C (SIGINT) or SIGTERM stops accepting new connections, lets in-flight requests finish and closes the Postgres pool before exiting with code 0. If that takes longer than 10 seconds (SHUTDOWN_TIMEOUT_MS in src/shutdown.ts), for example because a request is stuck on a stalled Bedrock call, the process logs a message and exits with code 1 instead of hanging. A second Ctrl+C while shutting down is ignored.
+
 Unit tests, no AWS or database needed (Bedrock and Postgres are stubbed):
 
     npm test
