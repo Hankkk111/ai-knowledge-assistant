@@ -74,7 +74,10 @@ export default function App() {
           {messages.map((msg, i) => (
             <div key={i}>
               {msg.role === "user" ? (
-                <p className="text-paper/90">
+                // break-words: a long URL or identifier in a question,
+                // answer or snippet would otherwise overflow the column
+                // and force horizontal scrolling on narrow screens.
+                <p className="text-paper/90 break-words">
                   <span className="text-amber font-mono text-xs mr-2">you</span>
                   {msg.content}
                 </p>
@@ -83,13 +86,13 @@ export default function App() {
                   {/* Answers often come back as paragraphs or numbered
                       lists; keep their line breaks instead of letting HTML
                       collapse them into one block of text. */}
-                  <p className="font-serif text-lg leading-relaxed text-paper whitespace-pre-line">
+                  <p className="font-serif text-lg leading-relaxed text-paper whitespace-pre-line break-words">
                     {msg.content}
                   </p>
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-3 border-l-2 border-amber/40 pl-3 flex flex-col gap-1.5">
                       {msg.sources.map((s, j) => (
-                        <p key={j} className="text-xs text-paper/50 font-mono leading-relaxed">
+                        <p key={j} className="text-xs text-paper/50 font-mono leading-relaxed break-words">
                           {/* Name the document so snippets from different
                               sources can be told apart. */}
                           <span className="text-amber/70 mr-2" title={s.documentId}>
