@@ -139,6 +139,8 @@ Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or th
 - src/db/schema.sql, table and index definitions
 - frontend/src/App.tsx, chat UI
 - frontend/src/api.ts, API client and base URL selection
+- frontend/src/errors.ts, maps API, timeout and network errors to the message shown in the chat
+- frontend/src/*.test.ts, frontend unit tests (`npm test` in frontend/, Vitest)
 - frontend/src/format.ts, display text helpers (message count, characters left, source labels)
 - frontend/src/messages.ts, conversation history helpers (dropping a failed question before it is retried)
 - frontend/src/types.ts, chat message and source types
