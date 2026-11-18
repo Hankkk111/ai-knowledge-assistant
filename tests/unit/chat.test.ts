@@ -154,6 +154,24 @@ describe("POST /chat handler", () => {
     });
   }
 
+  for (const [label, body] of [
+    ["an array", ["hello"]],
+    ["an array of request objects", [{ query: "hello" }]],
+    ["a string", "hello"],
+    ["null", null],
+  ] as const) {
+    test(`rejects a body that is ${label} with 400`, async () => {
+      const { deps, calls } = fakeDeps();
+      const { res, captured } = mockResponse();
+
+      await createChatHandler(deps)(mockRequest(body), res);
+
+      assert.equal(captured.statusCode, 400);
+      assert.deepEqual(captured.body, { error: "request body must be a JSON object" });
+      assert.equal(calls.embedText.length, 0, "services must not be called");
+    });
+  }
+
   for (const [label, query] of [
     ["number", 42],
     ["array", ["hello"]],

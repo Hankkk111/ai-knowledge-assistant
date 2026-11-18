@@ -92,6 +92,17 @@ export function createChatHandler(
   deps: ChatDependencies = defaultDependencies
 ): (req: Request, res: Response) => Promise<void> {
   return async function handleChat(req: Request, res: Response): Promise<void> {
+    // express.json() also accepts a top-level array (e.g. `["hello"]`), which
+    // has no `query` property and would otherwise be reported as "query is
+    // required" even though the client did send a question.
+    if (
+      req.body !== undefined &&
+      (typeof req.body !== "object" || req.body === null || Array.isArray(req.body))
+    ) {
+      res.status(400).json({ error: "request body must be a JSON object" });
+      return;
+    }
+
     const { query } = (req.body ?? {}) as Partial<ChatRequest>;
 
     if (query === undefined || query === null) {
