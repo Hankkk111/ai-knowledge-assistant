@@ -3,10 +3,29 @@ import { ApiError, RequestTimeoutError } from "./api";
 import { BUSY_MESSAGE, describeChatError, TIMEOUT_MESSAGE, UNREACHABLE_MESSAGE } from "./errors";
 
 describe("describeChatError", () => {
-  it("shows the API's reason for a 4xx response", () => {
+  it("shows the API's reason for a 400 response", () => {
     expect(describeChatError(new ApiError(400, "query must be at most 2000 characters"))).toBe(
       "query must be at most 2000 characters"
     );
+  });
+
+  it("shows the API's reason when the request body is too large", () => {
+    expect(describeChatError(new ApiError(413, "request body is too large"))).toBe(
+      "request body is too large"
+    );
+  });
+
+  it("does not show routing or auth errors from the gateway as if the question were wrong", () => {
+    for (const [status, message] of [
+      [401, "Unauthorized"],
+      [403, "Forbidden"],
+      [404, "Not Found"],
+      [404, "route not found: POST /api/chat"],
+      [405, "method POST not allowed on /health; use GET, HEAD"],
+      [415, "Content-Type must be application/json"],
+    ] as const) {
+      expect(describeChatError(new ApiError(status, message))).toBe(UNREACHABLE_MESSAGE);
+    }
   });
 
   it("asks the user to retry when the request was throttled", () => {

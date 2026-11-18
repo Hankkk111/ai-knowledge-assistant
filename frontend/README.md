@@ -28,5 +28,5 @@ Example, pointing a local build at another backend:
 
 - `src/App.tsx` – the chat page: message list, sources under each answer, input with a remaining-characters hint near the 2000-character limit.
 - `src/api.ts` – `sendMessage()` for `POST /chat`, with a 45-second timeout, `ApiError` for non-2xx responses and validation of the response body.
-- `src/errors.ts` – picks the error message shown to the user (API reason for 4xx, a "busy, try again" message for 429/503, timeout and generic failure messages).
+- `src/errors.ts` – picks the error message shown to the user (API reason for 400/413, a "couldn't reach" message for other 4xx such as a wrong API path, a "busy, try again" message for 429/503, timeout and generic failure messages).
 - `src/format.ts` – small display helpers (message count, characters left, short document labels).
