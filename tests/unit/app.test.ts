@@ -33,6 +33,11 @@ describe("app error handling", () => {
     assert.deepEqual(await res.json(), { status: "ok" });
   });
 
+  test("GET /health tells clients and proxies not to cache the result", async () => {
+    const res = await fetch(`${baseUrl}/health`);
+    assert.equal(res.headers.get("cache-control"), "no-store");
+  });
+
   test("responses do not advertise the framework in X-Powered-By", async () => {
     const res = await fetch(`${baseUrl}/health`);
     assert.equal(res.headers.get("x-powered-by"), null);

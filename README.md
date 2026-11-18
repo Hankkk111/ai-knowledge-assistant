@@ -114,7 +114,7 @@ Up to 5 of the most similar chunks are retrieved. If none are found, the model i
 
 ### GET /health
 
-Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or the database.
+Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or the database. The response has `Cache-Control: no-store`, so browsers and proxies never answer a check from cache.
 
 ## Infrastructure deployment
 

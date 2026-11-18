@@ -46,7 +46,10 @@ app.route("/chat").post(requireJsonBody, handleChat).all(methodNotAllowed(["POST
 app
   .route("/health")
   .get((_req, res) => {
-    res.json({ status: "ok" });
+    // A health check must reflect the API right now. Without this, a browser
+    // or an intermediate proxy may answer a repeated check from cache and
+    // keep reporting "ok" after the API has gone down.
+    res.set("Cache-Control", "no-store").json({ status: "ok" });
   })
   .all(methodNotAllowed(["GET", "HEAD"]));
 
