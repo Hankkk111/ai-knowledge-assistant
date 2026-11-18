@@ -3,6 +3,7 @@ import type { Message } from "./types";
 import { MAX_QUERY_LENGTH, sendMessage } from "./api";
 import { describeChatError } from "./errors";
 import { formatCharactersLeft, formatDocumentLabel, formatMessageCount } from "./format";
+import { dropFailedQuestion } from "./messages";
 
 // Show the remaining-characters hint once the query gets close to the limit.
 const LENGTH_HINT_THRESHOLD = MAX_QUERY_LENGTH - 200;
@@ -43,7 +44,9 @@ export default function App() {
       ]);
     } catch (err) {
       // Put the question back in the box so it can be retried or edited
-      // without retyping it, unless the user has already started a new one.
+      // without retyping it, unless the user has already started a new one,
+      // and take it out of the conversation so a retry doesn't list it twice.
+      setMessages((prev) => dropFailedQuestion(prev, query));
       setInput((current) => (current.length > 0 ? current : query));
       setError(describeChatError(err));
     } finally {

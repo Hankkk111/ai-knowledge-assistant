@@ -140,6 +140,7 @@ Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or th
 - frontend/src/App.tsx, chat UI
 - frontend/src/api.ts, API client and base URL selection
 - frontend/src/format.ts, display text helpers (message count, characters left, source labels)
+- frontend/src/messages.ts, conversation history helpers (dropping a failed question before it is retried)
 - frontend/src/types.ts, chat message and source types
 - infra/*.tf, Terraform resource definitions
 - tests/unit/*.test.ts, backend unit tests (`npm test`)
