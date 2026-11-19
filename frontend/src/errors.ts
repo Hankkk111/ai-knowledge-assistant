@@ -17,8 +17,11 @@ export const UNREACHABLE_MESSAGE =
  * they get the generic "couldn't reach" message instead. 429 (API
  * Gateway throttling) and 503 (the API reporting Bedrock throttling) are
  * temporary, so they get a "busy, try again" message rather than API
- * Gateway's terse "Too Many Requests" or the generic failure. A timeout and
- * anything else (a network or server failure) get a generic message.
+ * Gateway's terse "Too Many Requests" or the generic failure. A 504 means
+ * the API was reached but the model took too long to answer (the API reports
+ * a Bedrock model timeout that way), so it is reported like a client-side
+ * timeout rather than as an unreachable API. Anything else
+ * (a network or server failure) gets a generic message.
  */
 export function describeChatError(err: unknown): string {
   if (err instanceof ApiError && (err.status === 429 || err.status === 503)) {
@@ -27,7 +30,7 @@ export function describeChatError(err: unknown): string {
   if (err instanceof ApiError && (err.status === 400 || err.status === 413)) {
     return err.message;
   }
-  if (err instanceof RequestTimeoutError) {
+  if (err instanceof RequestTimeoutError || (err instanceof ApiError && err.status === 504)) {
     return TIMEOUT_MESSAGE;
   }
   return UNREACHABLE_MESSAGE;

@@ -41,6 +41,12 @@ describe("describeChatError", () => {
     expect(describeChatError(new RequestTimeoutError(45_000))).toBe(TIMEOUT_MESSAGE);
   });
 
+  it("treats a 504 gateway timeout as a timeout, not an unreachable API", () => {
+    expect(describeChatError(new ApiError(504, "The assistant took too long to answer. Please try again."))).toBe(
+      TIMEOUT_MESSAGE
+    );
+  });
+
   it("does not show the server's text for a 5xx response", () => {
     expect(describeChatError(new ApiError(500, "Internal server error"))).toBe(UNREACHABLE_MESSAGE);
   });
