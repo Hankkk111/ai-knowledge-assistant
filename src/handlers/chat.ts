@@ -22,7 +22,8 @@ export const SNIPPET_LENGTH = 150;
  * original document) are collapsed to single spaces so the preview reads as
  * one line. Truncation counts Unicode code points rather than UTF-16 units,
  * so an emoji or other astral character is never split into a lone surrogate
- * (which would render as "\uFFFD"), and an ellipsis marks that the text was cut.
+ * (which would render as "\uFFFD"), the cut is moved back to the end of a word
+ * when one is close by, and an ellipsis marks that the text was cut.
  */
 export function buildSnippet(content: string, maxLength: number = SNIPPET_LENGTH): string {
   const normalized = content.replace(/\s+/g, " ").trim();
@@ -32,7 +33,20 @@ export function buildSnippet(content: string, maxLength: number = SNIPPET_LENGTH
     return normalized;
   }
 
-  return `${codePoints.slice(0, maxLength).join("").trimEnd()}…`;
+  let cut = codePoints.slice(0, maxLength);
+
+  // Cutting at exactly maxLength usually ends the preview mid-word
+  // ("Refunds are proc…"). If the cut falls inside a word, back up to the
+  // last space, unless that would drop more than a quarter of the snippet
+  // (e.g. one very long token such as a URL), in which case keep the hard cut.
+  if (codePoints[maxLength] !== " ") {
+    const lastSpace = cut.lastIndexOf(" ");
+    if (lastSpace >= Math.ceil(maxLength * 0.75)) {
+      cut = cut.slice(0, lastSpace);
+    }
+  }
+
+  return `${cut.join("").trimEnd()}…`;
 }
 
 /**

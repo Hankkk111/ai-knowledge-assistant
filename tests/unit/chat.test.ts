@@ -356,6 +356,18 @@ describe("buildSnippet", () => {
   test("drops trailing whitespace before the ellipsis", () => {
     assert.equal(buildSnippet("abc def", 4), "abc…");
   });
+
+  test("ends the snippet at a word boundary instead of mid-word", () => {
+    assert.equal(buildSnippet("Refunds are processed within five days", 14), "Refunds are…");
+  });
+
+  test("keeps the hard cut when the last space is too far back", () => {
+    assert.equal(buildSnippet("See https://example.com/a/very/long/path", 20), "See https://example.…");
+  });
+
+  test("keeps a cut that already falls between words", () => {
+    assert.equal(buildSnippet("Refunds are processed", 11), "Refunds are…");
+  });
 });
 
 describe("dedupeChunks", () => {
