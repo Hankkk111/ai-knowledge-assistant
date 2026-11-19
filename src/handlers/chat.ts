@@ -74,6 +74,17 @@ export function isThrottlingError(err: unknown): boolean {
   );
 }
 
+/**
+ * True when Bedrock gave up because the model took too long to process the
+ * request (ModelTimeoutException, HTTP 408). That is a timeout rather than a
+ * broken upstream, so it is reported as 504 instead of the generic 502.
+ */
+export function isModelTimeoutError(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const { name, $metadata } = err as { name?: unknown; $metadata?: { httpStatusCode?: unknown } };
+  return name === "ModelTimeoutException" || $metadata?.httpStatusCode === 408;
+}
+
 // External services the chat pipeline depends on. Injectable so the handler
 // can be unit-tested without calling Bedrock or Postgres.
 export interface ChatDependencies {
@@ -169,6 +180,12 @@ export function createChatHandler(
           .status(503)
           .set("Retry-After", String(THROTTLED_RETRY_AFTER_SECONDS))
           .json({ error: "The assistant is busy right now. Please try again in a few seconds." });
+        return;
+      }
+      if (isModelTimeoutError(err)) {
+        res
+          .status(504)
+          .json({ error: "The assistant took too long to answer. Please try again." });
         return;
       }
       res

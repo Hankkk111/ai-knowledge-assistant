@@ -7,6 +7,7 @@ import {
   buildSnippet,
   createChatHandler,
   dedupeChunks,
+  isModelTimeoutError,
   isThrottlingError,
   MAX_QUERY_LENGTH,
   THROTTLED_RETRY_AFTER_SECONDS,
@@ -263,6 +264,42 @@ describe("POST /chat handler", () => {
     assert.deepEqual(captured.body, {
       error: "The assistant is busy right now. Please try again in a few seconds.",
     });
+  });
+
+  test("returns 504 when the Bedrock model times out", async (t) => {
+    t.mock.method(console, "error", () => {});
+    const timedOut = Object.assign(new Error("Model has timed out"), {
+      name: "ModelTimeoutException",
+      $metadata: { httpStatusCode: 408 },
+    });
+    const { deps } = fakeDeps({
+      generateAnswer: async () => {
+        throw timedOut;
+      },
+    });
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "anything" }), res);
+
+    assert.equal(captured.statusCode, 504);
+    assert.deepEqual(captured.body, {
+      error: "The assistant took too long to answer. Please try again.",
+    });
+    assert.equal(captured.headers["retry-after"], undefined);
+  });
+});
+
+describe("isModelTimeoutError", () => {
+  test("recognises ModelTimeoutException by name or HTTP status 408", () => {
+    assert.equal(isModelTimeoutError(Object.assign(new Error("too slow"), { name: "ModelTimeoutException" })), true);
+    assert.equal(isModelTimeoutError({ name: "UnknownError", $metadata: { httpStatusCode: 408 } }), true);
+  });
+
+  test("does not treat other failures as a model timeout", () => {
+    assert.equal(isModelTimeoutError({ name: "ThrottlingException", $metadata: { httpStatusCode: 429 } }), false);
+    assert.equal(isModelTimeoutError(new Error("Query read timeout")), false);
+    assert.equal(isModelTimeoutError(null), false);
+    assert.equal(isModelTimeoutError("ModelTimeoutException"), false);
   });
 });
 
