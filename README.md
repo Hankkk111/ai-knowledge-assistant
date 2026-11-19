@@ -111,6 +111,7 @@ Up to 5 of the most similar chunks are retrieved. If none are found, the model i
 | 405 | Known route called with the wrong method (e.g. `GET /chat`); the `Allow` header lists the supported ones |
 | 502 | Bedrock or Postgres failed while answering, including a Postgres connection or query timeout |
 | 503 | Bedrock throttled the request (rate or quota limit) or was temporarily unavailable; the `Retry-After` header says how many seconds to wait before retrying |
+| 504 | The Bedrock model took too long to answer (`ModelTimeoutException`); retrying usually works |
 
 ### GET /health
 
