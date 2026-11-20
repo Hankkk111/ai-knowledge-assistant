@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ApiError, RequestTimeoutError } from "./api";
-import { BUSY_MESSAGE, describeChatError, TIMEOUT_MESSAGE, UNREACHABLE_MESSAGE } from "./errors";
+import {
+  BUSY_MESSAGE,
+  describeChatError,
+  SERVER_ERROR_MESSAGE,
+  TIMEOUT_MESSAGE,
+  UNREACHABLE_MESSAGE,
+} from "./errors";
 
 describe("describeChatError", () => {
   it("shows the API's reason for a 400 response", () => {
@@ -48,7 +54,13 @@ describe("describeChatError", () => {
   });
 
   it("does not show the server's text for a 5xx response", () => {
-    expect(describeChatError(new ApiError(500, "Internal server error"))).toBe(UNREACHABLE_MESSAGE);
+    expect(describeChatError(new ApiError(500, "Internal server error"))).toBe(SERVER_ERROR_MESSAGE);
+  });
+
+  it("does not tell the user to check the API when it answered with a 502", () => {
+    expect(
+      describeChatError(new ApiError(502, "Failed to generate an answer. Please try again later."))
+    ).toBe(SERVER_ERROR_MESSAGE);
   });
 
   it("falls back to the generic message for network and unknown errors", () => {

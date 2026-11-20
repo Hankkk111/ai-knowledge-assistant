@@ -5,6 +5,8 @@ export const BUSY_MESSAGE =
   "The knowledge base is busy right now. Please wait a few seconds and try again.";
 export const UNREACHABLE_MESSAGE =
   "Couldn't reach the knowledge base. Check the API and try again.";
+export const SERVER_ERROR_MESSAGE =
+  "The knowledge base couldn't answer that right now. Please try again later.";
 
 /**
  * Turns an error from sendMessage into the message shown under the chat.
@@ -20,8 +22,11 @@ export const UNREACHABLE_MESSAGE =
  * Gateway's terse "Too Many Requests" or the generic failure. A 504 means
  * the API was reached but the model took too long to answer (the API reports
  * a Bedrock model timeout that way), so it is reported like a client-side
- * timeout rather than as an unreachable API. Anything else
- * (a network or server failure) gets a generic message.
+ * timeout rather than as an unreachable API. Other 5xx statuses (the API's
+ * 502 when Bedrock or Postgres fails, or a 500) mean the API was reached but
+ * could not answer, so they get a "try again later" message instead of
+ * telling the user to check the API; the server's own text is still not
+ * shown. Anything else (a network failure) gets the "couldn't reach" message.
  */
 export function describeChatError(err: unknown): string {
   if (err instanceof ApiError && (err.status === 429 || err.status === 503)) {
@@ -32,6 +37,9 @@ export function describeChatError(err: unknown): string {
   }
   if (err instanceof RequestTimeoutError || (err instanceof ApiError && err.status === 504)) {
     return TIMEOUT_MESSAGE;
+  }
+  if (err instanceof ApiError && err.status >= 500 && err.status < 600) {
+    return SERVER_ERROR_MESSAGE;
   }
   return UNREACHABLE_MESSAGE;
 }
