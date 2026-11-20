@@ -6,9 +6,10 @@ export interface DocumentChunk {
   metadata: Record<string, unknown>;
 }
 
+// POST /chat body. Each request is answered on its own: the API keeps no
+// conversation history, so there is no conversation ID to send.
 export interface ChatRequest {
   query: string;
-  conversationId?: string;
 }
 
 export interface ChatResponse {
