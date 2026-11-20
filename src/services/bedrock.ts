@@ -5,7 +5,10 @@ import { bedrockClient as client, decodeJsonBody } from "./bedrockClient";
  * Extracts the generated text from an Anthropic Messages response body.
  * Joins all text blocks and throws a descriptive error if there are none
  * (e.g. an empty content array), instead of failing with a TypeError on
- * `content[0].text`. An answer cut off by the token limit ends with "…".
+ * `content[0].text`. Leading and trailing whitespace is removed: the model
+ * sometimes opens with a blank line, and the frontend keeps line breaks
+ * (whitespace-pre-line), so it would show up as an empty line above the
+ * answer. An answer cut off by the token limit ends with "…".
  */
 export function parseAnswerResponse(body: unknown): string {
   const content = (body as { content?: unknown } | null)?.content;
@@ -23,9 +26,10 @@ export function parseAnswerResponse(body: unknown): string {
         typeof (block as { text?: unknown }).text === "string"
     )
     .map((block) => block.text)
-    .join("");
+    .join("")
+    .trim();
 
-  if (text.trim().length === 0) {
+  if (text.length === 0) {
     throw new Error("Bedrock response did not contain any generated text");
   }
 
@@ -33,7 +37,7 @@ export function parseAnswerResponse(body: unknown): string {
   // mid-sentence. Mark it with an ellipsis so the cut-off doesn't read as a
   // complete answer.
   if ((body as { stop_reason?: unknown }).stop_reason === "max_tokens") {
-    return `${text.trimEnd()}…`;
+    return `${text}…`;
   }
 
   return text;

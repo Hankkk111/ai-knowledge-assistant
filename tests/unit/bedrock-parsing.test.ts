@@ -115,9 +115,17 @@ describe("parseAnswerResponse", () => {
     assert.equal(parseAnswerResponse(body), "The policy covers three cases: first,…");
   });
 
-  test("leaves a complete answer unchanged", () => {
-    const body = { content: [{ type: "text", text: "Done. " }], stop_reason: "end_turn" };
-    assert.equal(parseAnswerResponse(body), "Done. ");
+  test("does not add an ellipsis to a complete answer", () => {
+    const body = { content: [{ type: "text", text: "Done." }], stop_reason: "end_turn" };
+    assert.equal(parseAnswerResponse(body), "Done.");
+  });
+
+  test("trims blank lines and spaces around the answer", () => {
+    const body = {
+      content: [{ type: "text", text: "\n\nRefunds take 5 days.\n\nSee the policy.\n " }],
+      stop_reason: "end_turn",
+    };
+    assert.equal(parseAnswerResponse(body), "Refunds take 5 days.\n\nSee the policy.");
   });
 });
 
