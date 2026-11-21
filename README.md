@@ -104,7 +104,7 @@ Up to 5 of the most similar chunks are retrieved. If none are found, the model i
 
 | Status | When |
 | --- | --- |
-| 400 | `query` missing or blank (`query is required`), not a string (`query must be a string`) or longer than 2000 characters; body is not valid JSON or is not a JSON object (`request body must be a JSON object`, e.g. a top-level array) |
+| 400 | `query` missing or blank (`query is required`), not a string (`query must be a string`) or longer than 2000 characters (`query must be at most 2000 characters (got N)`, where N is the trimmed length); body is not valid JSON or is not a JSON object (`request body must be a JSON object`, e.g. a top-level array) |
 | 413 | Request body is larger than the 16 KB JSON limit (far above the largest valid query) |
 | 415 | Body sent without a `Content-Type: application/json` header |
 | 404 | Unknown route |

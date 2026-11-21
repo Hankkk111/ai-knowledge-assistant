@@ -149,10 +149,12 @@ export function createChatHandler(
 
     const trimmedQuery = query.trim();
 
+    // Say how long the query was, so a client that built it programmatically
+    // (e.g. by pasting a document in) knows how much to cut.
     if (trimmedQuery.length > MAX_QUERY_LENGTH) {
-      res
-        .status(400)
-        .json({ error: `query must be at most ${MAX_QUERY_LENGTH} characters` });
+      res.status(400).json({
+        error: `query must be at most ${MAX_QUERY_LENGTH} characters (got ${trimmedQuery.length})`,
+      });
       return;
     }
 

@@ -221,9 +221,23 @@ describe("POST /chat handler", () => {
 
     assert.equal(captured.statusCode, 400);
     assert.deepEqual(captured.body, {
-      error: `query must be at most ${MAX_QUERY_LENGTH} characters`,
+      error: `query must be at most ${MAX_QUERY_LENGTH} characters (got ${MAX_QUERY_LENGTH + 1})`,
     });
     assert.equal(calls.embedText.length, 0);
+  });
+
+  test("reports the length of the trimmed query, not the raw one", async () => {
+    const { deps } = fakeDeps();
+    const { res, captured } = mockResponse();
+    const query = "a".repeat(MAX_QUERY_LENGTH + 5);
+
+    await createChatHandler(deps)(mockRequest({ query: `  ${query}\n` }), res);
+
+    assert.equal(captured.statusCode, 400);
+    assert.match(
+      (captured.body as { error: string }).error,
+      new RegExp(`\\(got ${MAX_QUERY_LENGTH + 5}\\)$`)
+    );
   });
 
   test("returns 502 when an upstream service fails", async (t) => {
