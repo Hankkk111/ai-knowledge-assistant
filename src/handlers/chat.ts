@@ -46,7 +46,12 @@ export function buildSnippet(content: string, maxLength: number = SNIPPET_LENGTH
     }
   }
 
-  return `${cut.join("").trimEnd()}…`;
+  // A cut right after a comma or other separator would read "processed,…";
+  // drop trailing separators so the ellipsis follows the last word. Closing
+  // brackets, quotes and sentence-ending punctuation are kept.
+  const text = cut.join("").replace(/[\s,;:\-–—]+$/u, "");
+
+  return `${text || cut.join("").trimEnd()}…`;
 }
 
 /**

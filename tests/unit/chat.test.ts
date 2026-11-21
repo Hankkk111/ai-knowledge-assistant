@@ -379,6 +379,15 @@ describe("buildSnippet", () => {
     assert.equal(buildSnippet("See https://example.com/a/very/long/path", 20), "See https://example.…");
   });
 
+  test("drops a comma or dash left at the end of the cut before the ellipsis", () => {
+    assert.equal(buildSnippet("Refunds are processed, usually", 22), "Refunds are processed…");
+    assert.equal(buildSnippet("Step one — then two", 10), "Step one…");
+  });
+
+  test("keeps sentence-ending punctuation before the ellipsis", () => {
+    assert.equal(buildSnippet("It works. Then more", 9), "It works.…");
+  });
+
   test("keeps a cut that already falls between words", () => {
     assert.equal(buildSnippet("Refunds are processed", 11), "Refunds are…");
   });
