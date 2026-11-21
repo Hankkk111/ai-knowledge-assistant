@@ -68,7 +68,9 @@ HTTP_STATUS="${HTTP_STATUS:-000}"
 if [[ "$HTTP_STATUS" != "200" ]]; then
   fail "Health endpoint returned HTTP ${HTTP_STATUS} (expected 200)"
 else
-  STATUS_FIELD=$(grep -o '"status":"[^"]*"' "$RESPONSE_FILE" | cut -d'"' -f4 || echo "")
+  # Allow whitespace around the colon: a pretty-printed body such as
+  # {"status": "ok"} is just as healthy as the compact one this API sends.
+  STATUS_FIELD=$(grep -oE '"status"[[:space:]]*:[[:space:]]*"[^"]*"' "$RESPONSE_FILE" | sed -E 's/.*"([^"]*)"$/\1/' || echo "")
   if [[ "$STATUS_FIELD" != "ok" ]]; then
     fail "Health endpoint body did not report status=ok (got: $(cat "$RESPONSE_FILE"))"
   else
