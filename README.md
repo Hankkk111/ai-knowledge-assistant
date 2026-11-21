@@ -106,7 +106,7 @@ Up to 5 of the most similar chunks are retrieved. If none are found, the model i
 | --- | --- |
 | 400 | `query` missing or blank (`query is required`), not a string (`query must be a string`) or longer than 2000 characters (`query must be at most 2000 characters (got N)`, where N is the trimmed length); body is not valid JSON or is not a JSON object (`request body must be a JSON object`, e.g. a top-level array) |
 | 413 | Request body is larger than the 16 KB JSON limit (far above the largest valid query) |
-| 415 | Body sent without a `Content-Type: application/json` header |
+| 415 | Non-empty body sent without a `Content-Type: application/json` header (a request with no body at all gets the 400 `query is required` instead) |
 | 404 | Unknown route |
 | 405 | Known route called with the wrong method (e.g. `GET /chat`); the `Allow` header lists the supported ones |
 | 502 | Bedrock or Postgres failed while answering, including a Postgres connection or query timeout |
