@@ -31,10 +31,18 @@ export function methodNotAllowed(allowed: string[]) {
  * Rejects a request body that is not JSON with 415. express.json() silently
  * skips other content types, so e.g. a form post or a curl call without
  * `-H "Content-Type: application/json"` reached the handler with an empty
- * body and got a misleading "query is required".
+ * body and got a misleading "query is required". A request with no body at
+ * all is passed through, since its Content-Type is irrelevant.
  */
 export function requireJsonBody(req: Request, res: Response, next: NextFunction) {
-  if (!req.is("application/json")) {
+  // An empty body (no Transfer-Encoding and a Content-Length of 0 or none,
+  // which is what `fetch` or `curl -X POST` send without a body) has nothing
+  // to mis-parse, so let the handler report the missing query instead of
+  // blaming the Content-Type.
+  const hasBody =
+    req.headers["transfer-encoding"] !== undefined ||
+    Number(req.headers["content-length"] ?? 0) > 0;
+  if (hasBody && !req.is("application/json")) {
     res.status(415).json({ error: "Content-Type must be application/json" });
     return;
   }
