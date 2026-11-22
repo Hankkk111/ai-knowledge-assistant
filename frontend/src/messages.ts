@@ -15,3 +15,13 @@ export function dropFailedQuestion(messages: Message[], query: string): Message[
   }
   return messages;
 }
+
+/**
+ * True when a question has nothing to search for: it is empty or made only of
+ * whitespace and invisible format characters such as a zero-width space
+ * (U+200B), which trim() leaves in place. The API rejects such a query with
+ * "query is required", so the form doesn't offer to send it.
+ */
+export function isBlankQuery(query: string): boolean {
+  return /^[\s\p{Cf}]*$/u.test(query);
+}

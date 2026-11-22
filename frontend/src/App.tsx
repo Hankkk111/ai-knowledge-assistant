@@ -3,7 +3,7 @@ import type { Message } from "./types";
 import { MAX_QUERY_LENGTH, sendMessage } from "./api";
 import { describeChatError } from "./errors";
 import { formatCharactersLeft, formatDocumentLabel, formatMessageCount } from "./format";
-import { dropFailedQuestion } from "./messages";
+import { dropFailedQuestion, isBlankQuery } from "./messages";
 
 // Show the remaining-characters hint once the query gets close to the limit.
 const LENGTH_HINT_THRESHOLD = MAX_QUERY_LENGTH - 200;
@@ -14,9 +14,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  // A blank or whitespace-only question is ignored on submit, so don't
-  // present the button as clickable for one.
-  const canSubmit = !loading && input.trim().length > 0;
+  // A blank question (including one of only zero-width characters) is
+  // ignored on submit, so don't present the button as clickable for one.
+  const canSubmit = !loading && !isBlankQuery(input);
 
   // Also follow the "searching…" indicator and the error message, which are
   // rendered below the last message: in a long conversation they would
@@ -29,7 +29,7 @@ export default function App() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const query = input.trim();
-    if (!query || loading) return;
+    if (isBlankQuery(query) || loading) return;
 
     setMessages((prev) => [...prev, { role: "user", content: query }]);
     setInput("");

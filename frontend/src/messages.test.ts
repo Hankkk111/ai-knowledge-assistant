@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dropFailedQuestion } from "./messages";
+import { dropFailedQuestion, isBlankQuery } from "./messages";
 import type { Message } from "./types";
 
 describe("dropFailedQuestion", () => {
@@ -30,5 +30,24 @@ describe("dropFailedQuestion", () => {
     const messages: Message[] = [{ role: "user", content: "How do I deploy?" }];
     dropFailedQuestion(messages, "How do I deploy?");
     expect(messages).toHaveLength(1);
+  });
+});
+
+describe("isBlankQuery", () => {
+  it.each([
+    ["an empty string", ""],
+    ["whitespace", "  \t\n"],
+    ["zero-width spaces", "​​"],
+    ["a soft hyphen and word joiner", " ­⁠ "],
+  ])("is true for %s", (_name, query) => {
+    expect(isBlankQuery(query)).toBe(true);
+  });
+
+  it.each([
+    ["a word", "hello"],
+    ["text next to a zero-width space", "​hello"],
+    ["an emoji", "👍"],
+  ])("is false for %s", (_name, query) => {
+    expect(isBlankQuery(query)).toBe(false);
   });
 });
