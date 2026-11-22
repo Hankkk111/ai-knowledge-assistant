@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: '0 */6 * * *'
 
+# These jobs only check out and read the code, so the GITHUB_TOKEN doesn't
+# need write access to the repository.
+permissions:
+  contents: read
+
 jobs:
   health-check:
     runs-on: ubuntu-latest

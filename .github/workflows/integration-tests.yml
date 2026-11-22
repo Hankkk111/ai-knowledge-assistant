@@ -7,6 +7,11 @@ on:
   schedule:
     - cron: '0 0 * * *'  # 每天跑一次，监控部署环境是否还健康
 
+# These jobs only check out and read the code, so the GITHUB_TOKEN doesn't
+# need write access to the repository.
+permissions:
+  contents: read
+
 jobs:
   test-lambda-deployment:
     runs-on: ubuntu-latest
