@@ -73,7 +73,9 @@ async function readErrorMessage(res: Response): Promise<string> {
  * renders it. A proxy or gateway can answer 200 with something else (an HTML
  * page, `{}`), which would otherwise show up as a blank assistant message.
  * An empty or whitespace-only answer is rejected for the same reason.
- * Malformed source entries are dropped rather than failing the whole answer.
+ * Malformed source entries are dropped rather than failing the whole answer,
+ * and so are sources whose snippet is blank: they would render as a bare
+ * document label with no text, which looks like a rendering bug.
  */
 export function parseChatResponse(body: unknown): ChatResponse {
   const { answer, sources } = (body ?? {}) as { answer?: unknown; sources?: unknown };
@@ -88,7 +90,8 @@ export function parseChatResponse(body: unknown): ChatResponse {
           typeof s === "object" &&
           s !== null &&
           typeof (s as { documentId?: unknown }).documentId === "string" &&
-          typeof (s as { snippet?: unknown }).snippet === "string"
+          typeof (s as { snippet?: unknown }).snippet === "string" &&
+          (s as { snippet: string }).snippet.trim().length > 0
       )
     : [];
 

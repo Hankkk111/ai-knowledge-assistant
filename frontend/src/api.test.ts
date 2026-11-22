@@ -29,6 +29,19 @@ describe("parseChatResponse", () => {
     expect(result.sources).toEqual([{ documentId: "doc-1", snippet: "ok" }]);
   });
 
+  test("drops sources with an empty or whitespace-only snippet", () => {
+    const result = parseChatResponse({
+      answer: "Paris",
+      sources: [
+        { documentId: "doc-1", snippet: "" },
+        { documentId: "doc-2", snippet: " \n\t" },
+        { documentId: "doc-3", snippet: "Paris is the capital" },
+      ],
+    });
+
+    expect(result.sources).toEqual([{ documentId: "doc-3", snippet: "Paris is the capital" }]);
+  });
+
   test.each([
     ["null", null],
     ["an empty object", {}],
