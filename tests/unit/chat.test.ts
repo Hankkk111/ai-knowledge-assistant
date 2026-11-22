@@ -136,12 +136,24 @@ describe("POST /chat handler", () => {
     assert.equal(calls.generateAnswer[0][0], "hello");
   });
 
+  test("accepts a query that contains a zero-width space next to visible text", async () => {
+    const { deps, calls } = fakeDeps();
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "\u200bhello" }), res);
+
+    assert.equal(captured.statusCode, 200);
+    assert.deepEqual(calls.embedText, ["\u200bhello"]);
+  });
+
   for (const [label, body] of [
     ["missing body", undefined],
     ["missing query", {}],
     ["null query", { query: null }],
     ["empty query", { query: "" }],
     ["whitespace-only query", { query: "   \t\n" }],
+    ["query of only zero-width spaces", { query: "\u200b\u200b" }],
+    ["query of only invisible format characters", { query: " \u00ad\u2060\u200d " }],
   ] as const) {
     test(`rejects ${label} with 400`, async () => {
       const { deps, calls } = fakeDeps();

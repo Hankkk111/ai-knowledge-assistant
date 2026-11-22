@@ -13,6 +13,10 @@ export const NO_CONTEXT_ANSWER =
 // Upper bound on query length, to keep embedding and generation costs predictable.
 export const MAX_QUERY_LENGTH = 2000;
 
+// Matches a query with no visible content: only whitespace and Unicode
+// format characters (category Cf, e.g. U+200B ZERO WIDTH SPACE).
+const BLANK_QUERY = /^[\s\p{Cf}]*$/u;
+
 // Maximum length, in Unicode code points, of the source snippet returned per chunk.
 export const SNIPPET_LENGTH = 150;
 
@@ -147,7 +151,11 @@ export function createChatHandler(
       return;
     }
 
-    if (query.trim().length === 0) {
+    // trim() keeps invisible format characters such as a zero-width space
+    // (U+200B) or soft hyphen, which come along when text is copied from web
+    // pages or documents. A query made only of those has nothing to search
+    // for, so treat it like a blank one instead of paying for an embedding.
+    if (BLANK_QUERY.test(query)) {
       res.status(400).json({ error: "query is required" });
       return;
     }
