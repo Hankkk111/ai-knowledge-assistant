@@ -105,6 +105,10 @@ describe("parseAnswerResponse", () => {
       () => parseAnswerResponse({ content: [{ type: "text", text: "   " }] }),
       /generated text/
     );
+    assert.throws(
+      () => parseAnswerResponse({ content: [{ type: "text", text: "\u200b \u200b" }] }),
+      /generated text/
+    );
   });
 
   test("marks an answer cut off by the token limit with an ellipsis", () => {

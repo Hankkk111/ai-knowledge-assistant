@@ -29,7 +29,10 @@ export function parseAnswerResponse(body: unknown): string {
     .join("")
     .trim();
 
-  if (text.length === 0) {
+  // trim() leaves invisible format characters such as a zero-width space
+  // (U+200B) in place; an answer made only of those would reach the user as
+  // an empty-looking message, so treat it like no text at all.
+  if (/^[\s\p{Cf}]*$/u.test(text)) {
     throw new Error("Bedrock response did not contain any generated text");
   }
 
