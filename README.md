@@ -100,7 +100,7 @@ Response (200):
 
 Each `snippet` is a one-line preview of the chunk: runs of whitespace (line breaks, indentation) are collapsed to single spaces, and text longer than 150 characters is cut at the end of a word (or mid-word if no space is close to the limit, e.g. in a long URL), never inside a character, and ends with `…`. A document appears once per matching chunk, so the same `documentId` can be listed more than once.
 
-Up to 5 of the most similar chunks are retrieved. If none are found, the model is not called and the answer says no relevant documents were found, with an empty `sources` array.
+Up to 5 of the most similar chunks are retrieved. Chunks with no visible text (empty, whitespace only, or only invisible characters such as zero-width spaces) are skipped, and so are exact repeats of an earlier chunk from the same document (ignoring whitespace differences), e.g. after a document was ingested twice. If no chunks are left, the model is not called and the answer says no relevant documents were found, with an empty `sources` array.
 
 | Status | When |
 | --- | --- |
