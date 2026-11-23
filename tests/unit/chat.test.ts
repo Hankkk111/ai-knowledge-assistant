@@ -116,6 +116,23 @@ describe("POST /chat handler", () => {
     assert.equal(calls.generateAnswer[0][1], "Refunds take 5 days.");
   });
 
+  test("ignores chunks made only of zero-width characters", async () => {
+    const { deps, calls } = fakeDeps({
+      findRelevantChunks: async () => [
+        chunk("doc-a", "\u200b\ufeff \u200b"),
+        chunk("doc-b", "Refunds take 5 days."),
+      ],
+    });
+    const { res, captured } = mockResponse();
+
+    await createChatHandler(deps)(mockRequest({ query: "How long do refunds take?" }), res);
+
+    assert.deepEqual((captured.body as { sources: unknown[] }).sources, [
+      { documentId: "doc-b", snippet: "Refunds take 5 days." },
+    ]);
+    assert.equal(calls.generateAnswer[0][1], "Refunds take 5 days.");
+  });
+
   test("does not call the model when every retrieved chunk is blank", async () => {
     const { deps, calls } = fakeDeps({ findRelevantChunks: async () => [chunk("doc-a", "   ")] });
     const { res, captured } = mockResponse();

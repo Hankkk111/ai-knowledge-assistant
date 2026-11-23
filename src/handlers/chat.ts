@@ -13,9 +13,9 @@ export const NO_CONTEXT_ANSWER =
 // Upper bound on query length, to keep embedding and generation costs predictable.
 export const MAX_QUERY_LENGTH = 2000;
 
-// Matches a query with no visible content: only whitespace and Unicode
-// format characters (category Cf, e.g. U+200B ZERO WIDTH SPACE).
-const BLANK_QUERY = /^[\s\p{Cf}]*$/u;
+// Matches text with no visible content: only whitespace and Unicode format
+// characters (category Cf, e.g. U+200B ZERO WIDTH SPACE).
+const BLANK_TEXT = /^[\s\p{Cf}]*$/u;
 
 // Maximum length, in Unicode code points, of the source snippet returned per chunk.
 export const SNIPPET_LENGTH = 150;
@@ -155,7 +155,7 @@ export function createChatHandler(
     // (U+200B) or soft hyphen, which come along when text is copied from web
     // pages or documents. A query made only of those has nothing to search
     // for, so treat it like a blank one instead of paying for an embedding.
-    if (BLANK_QUERY.test(query)) {
+    if (BLANK_TEXT.test(query)) {
       res.status(400).json({ error: "query is required" });
       return;
     }
@@ -176,12 +176,14 @@ export function createChatHandler(
     // until the Lambda times out. Catch it here and return a clear error.
     try {
       const queryEmbedding = await deps.embedText(trimmedQuery);
-      // A chunk whose content is empty or only whitespace adds nothing to the
-      // prompt and would be listed as a source with a blank snippet, so it
-      // must not count as relevant context.
+      // A chunk whose content is empty, only whitespace or only invisible
+      // format characters (e.g. zero-width spaces left over from extracting a
+      // PDF or web page) adds nothing to the prompt and would be listed as a
+      // source with a blank-looking snippet, so it must not count as relevant
+      // context.
       const chunks = dedupeChunks(
         (await deps.findRelevantChunks(queryEmbedding)).filter(
-          (c) => c.content.trim().length > 0
+          (c) => !BLANK_TEXT.test(c.content)
         )
       );
 
