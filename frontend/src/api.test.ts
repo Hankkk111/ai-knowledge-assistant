@@ -29,12 +29,13 @@ describe("parseChatResponse", () => {
     expect(result.sources).toEqual([{ documentId: "doc-1", snippet: "ok" }]);
   });
 
-  test("drops sources with an empty or whitespace-only snippet", () => {
+  test("drops sources whose snippet has no visible text", () => {
     const result = parseChatResponse({
       answer: "Paris",
       sources: [
         { documentId: "doc-1", snippet: "" },
         { documentId: "doc-2", snippet: " \n\t" },
+        { documentId: "doc-4", snippet: "\u200b\u200b" },
         { documentId: "doc-3", snippet: "Paris is the capital" },
       ],
     });
@@ -48,6 +49,7 @@ describe("parseChatResponse", () => {
     ["a non-string answer", { answer: 42 }],
     ["an empty answer", { answer: "" }],
     ["a whitespace-only answer", { answer: "  \n " }],
+    ["an answer of only zero-width spaces", { answer: "\u200b\u200b" }],
   ])("throws on %s", (_name, body) => {
     expect(() => parseChatResponse(body)).toThrow("API response did not contain an answer");
   });

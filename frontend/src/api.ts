@@ -68,11 +68,16 @@ async function readErrorMessage(res: Response): Promise<string> {
   return `Request failed: ${res.status}`;
 }
 
+// Text with nothing visible in it: only whitespace and invisible format
+// characters such as a zero-width space (U+200B), which trim() leaves in place.
+const BLANK_TEXT = /^[\s\p{Cf}]*$/u;
+
 /**
  * Checks that a successful /chat body has the expected shape before the UI
  * renders it. A proxy or gateway can answer 200 with something else (an HTML
  * page, `{}`), which would otherwise show up as a blank assistant message.
- * An empty or whitespace-only answer is rejected for the same reason.
+ * An answer with no visible text (empty, whitespace or only zero-width
+ * characters) is rejected for the same reason.
  * Malformed source entries are dropped rather than failing the whole answer,
  * and so are sources whose snippet is blank: they would render as a bare
  * document label with no text, which looks like a rendering bug.
@@ -80,7 +85,7 @@ async function readErrorMessage(res: Response): Promise<string> {
 export function parseChatResponse(body: unknown): ChatResponse {
   const { answer, sources } = (body ?? {}) as { answer?: unknown; sources?: unknown };
 
-  if (typeof answer !== "string" || answer.trim().length === 0) {
+  if (typeof answer !== "string" || BLANK_TEXT.test(answer)) {
     throw new Error("API response did not contain an answer");
   }
 
@@ -91,7 +96,7 @@ export function parseChatResponse(body: unknown): ChatResponse {
           s !== null &&
           typeof (s as { documentId?: unknown }).documentId === "string" &&
           typeof (s as { snippet?: unknown }).snippet === "string" &&
-          (s as { snippet: string }).snippet.trim().length > 0
+          !BLANK_TEXT.test((s as { snippet: string }).snippet)
       )
     : [];
 
