@@ -117,6 +117,20 @@ Up to 5 of the most similar chunks are retrieved. Chunks with no visible text (e
 
 Returns `{ "status": "ok" }` when the API is up. It does not check Bedrock or the database. The response has `Cache-Control: no-store`, so browsers and proxies never answer a check from cache.
 
+## Frontend error handling
+
+The chat UI gives up on a /chat request after 45 seconds (REQUEST_TIMEOUT_MS in frontend/src/api.ts, well above the 30-second Lambda timeout), including when the response headers arrive but the body stalls. A failed question is taken out of the conversation and put back in the input box so it can be retried. The message shown depends on the failure (describeChatError in frontend/src/errors.ts):
+
+| Failure | Message shown |
+| --- | --- |
+| 400 or 413 | The API's own `error` text, e.g. `query must be at most 2000 characters (got N)` |
+| 429 or 503 | The knowledge base is busy, wait a few seconds and try again |
+| 504, or no response within 45 seconds | The knowledge base took too long to answer |
+| Other 5xx (e.g. the 502 when Bedrock or Postgres fails) | The knowledge base couldn't answer right now, try again later |
+| Network failure or any other 4xx (e.g. 403/404 from a wrong VITE_API_BASE) | Couldn't reach the knowledge base, check the API |
+
+A 200 response without a non-blank `answer` string is treated as an error too, and sources that are malformed or have a blank snippet are dropped rather than shown.
+
 ## Infrastructure deployment
 
     cd infra
