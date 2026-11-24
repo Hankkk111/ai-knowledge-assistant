@@ -100,6 +100,25 @@ describe("sendMessage", () => {
     });
   });
 
+  test("skips a blank error field in favour of the message field", async () => {
+    stubFetch(Response.json({ error: "  ", message: "Forbidden" }, { status: 403 }));
+
+    await expect(sendMessage("hi")).rejects.toMatchObject({ status: 403, message: "Forbidden" });
+  });
+
+  test.each([
+    ["blank error and message fields", { error: "", message: " \n" }],
+    ["non-string error and message fields", { error: { code: 1 }, message: 42 }],
+    ["a JSON null body", null],
+  ])("falls back to the status code for %s", async (_name, body) => {
+    stubFetch(Response.json(body, { status: 500 }));
+
+    await expect(sendMessage("hi")).rejects.toMatchObject({
+      status: 500,
+      message: "Request failed: 500",
+    });
+  });
+
   test("falls back to the status code when the error body is not JSON", async () => {
     stubFetch(new Response("<html>Bad Gateway</html>", { status: 502 }));
 
