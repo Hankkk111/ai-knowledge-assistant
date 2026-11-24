@@ -103,6 +103,11 @@ export function parseChatResponse(body: unknown): ChatResponse {
   return { answer, sources: validSources };
 }
 
+// AbortSignal.timeout() aborts with a DOMException named "TimeoutError".
+function isTimeoutAbort(err: unknown): boolean {
+  return err instanceof DOMException && err.name === "TimeoutError";
+}
+
 export async function sendMessage(
   query: string,
   timeoutMs: number = REQUEST_TIMEOUT_MS
@@ -116,7 +121,7 @@ export async function sendMessage(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
-    if (err instanceof DOMException && err.name === "TimeoutError") {
+    if (isTimeoutAbort(err)) {
       throw new RequestTimeoutError(timeoutMs);
     }
     throw err;
@@ -126,10 +131,16 @@ export async function sendMessage(
     throw new ApiError(res.status, await readErrorMessage(res));
   }
 
+  // The timeout signal also covers reading the body, so a response whose
+  // headers arrived in time but whose body stalls is aborted here. Report that
+  // as a timeout, not as a malformed response.
   let body: unknown;
   try {
     body = await res.json();
-  } catch {
+  } catch (err) {
+    if (isTimeoutAbort(err)) {
+      throw new RequestTimeoutError(timeoutMs);
+    }
     throw new Error("API response was not valid JSON");
   }
 

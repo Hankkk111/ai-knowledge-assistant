@@ -138,4 +138,25 @@ describe("sendMessage", () => {
     expect(error).toBeInstanceOf(RequestTimeoutError);
     expect(error).toMatchObject({ message: "The request timed out after 0.01 seconds" });
   });
+
+  test("throws a RequestTimeoutError when the response body stalls past the timeout", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const res = new Response("{}", { status: 200 });
+        // Headers arrived in time, but reading the body is cut off by the
+        // same timeout signal.
+        vi.spyOn(res, "json").mockImplementation(
+          () =>
+            new Promise((_resolve, reject) => {
+              init.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+            })
+        );
+        return res;
+      })
+    );
+
+    const error = await sendMessage("hi", 10).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(RequestTimeoutError);
+  });
 });
