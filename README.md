@@ -56,8 +56,11 @@ Configuration, all optional (defaults match the local setup above):
 | DB_NAME | ai_knowledge_assistant | Postgres database |
 | DB_USER / DB_PASSWORD | postgres / postgres | Postgres credentials |
 | BEDROCK_REGION | us-east-1 | Region for Bedrock embedding and generation calls |
+| MAX_CHUNK_DISTANCE | unset (no cut-off) | Largest cosine distance (0 to 2) a retrieved chunk may have from the question |
 
 PORT and DB_PORT must be a plain decimal number from 1 to 65535. Any other value (blank, `abc`, `70000`, `0x1538`, `5432.0`) is ignored and the default is used. A blank BEDROCK_REGION also falls back to the default.
+
+By default /chat always uses the 5 nearest chunks, even when none of them is about the question, so the model is handed unrelated context and lists it as sources. Set MAX_CHUNK_DISTANCE to drop chunks further away than that cosine distance (0 means identical direction, 2 opposite); if no chunk is close enough, /chat returns the "couldn't find" answer instead. It must be a plain decimal number greater than 0 and at most 2 (e.g. `0.6`); any other value is ignored and no cut-off is applied. A good value depends on the indexed documents, so try a few questions they do and don't cover before settling on one.
 
 Postgres connections time out after 5 seconds and individual queries after 10 seconds (DB_CONNECTION_TIMEOUT_MS and DB_QUERY_TIMEOUT_MS in src/db/client.ts), so an unreachable database makes /chat return a 502 well within the 30-second Lambda timeout instead of hanging until API Gateway gives up.
 
