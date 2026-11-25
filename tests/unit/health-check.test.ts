@@ -3,9 +3,24 @@ import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const SCRIPT = join(__dirname, "../../scripts/health-check.sh");
+// Ansible copies this file onto the EC2 host and runs it after each deploy.
+const ANSIBLE_SCRIPT = join(__dirname, "../../infra/ansible/roles/app/files/health-check.sh");
+
+describe("infra/ansible health-check.sh", () => {
+  // The deployed copy previously fell behind fixes made to scripts/, so the
+  // post-deploy check behaved differently from the one CI runs.
+  test("is identical to scripts/health-check.sh", () => {
+    assert.equal(
+      readFileSync(ANSIBLE_SCRIPT, "utf8"),
+      readFileSync(SCRIPT, "utf8"),
+      "copy scripts/health-check.sh to infra/ansible/roles/app/files/ after editing it"
+    );
+  });
+});
 
 // Argument handling: both cases exit before the script makes any HTTP
 // request, so no server is needed.
