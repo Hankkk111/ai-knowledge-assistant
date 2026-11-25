@@ -119,6 +119,13 @@ describe("parseAnswerResponse", () => {
     assert.equal(parseAnswerResponse(body), "The policy covers three cases: first,…");
   });
 
+  test("does not double an ellipsis the cut-off answer already ends with", () => {
+    for (const text of ["Steps: unpack, wait…", "Steps: unpack, wait...", "Steps: unpack, wait… \n"]) {
+      const body = { content: [{ type: "text", text }], stop_reason: "max_tokens" };
+      assert.equal(parseAnswerResponse(body), text.trim());
+    }
+  });
+
   test("does not add an ellipsis to a complete answer", () => {
     const body = { content: [{ type: "text", text: "Done." }], stop_reason: "end_turn" };
     assert.equal(parseAnswerResponse(body), "Done.");

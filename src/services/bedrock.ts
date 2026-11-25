@@ -38,9 +38,10 @@ export function parseAnswerResponse(body: unknown): string {
 
   // The model stopped because it hit ANSWER_MAX_TOKENS, so the text ends
   // mid-sentence. Mark it with an ellipsis so the cut-off doesn't read as a
-  // complete answer.
+  // complete answer. If the cut happens to land right after an ellipsis the
+  // model wrote itself ("…" or "..."), don't add a second one ("……").
   if ((body as { stop_reason?: unknown }).stop_reason === "max_tokens") {
-    return `${text}…`;
+    return /(…|\.\.\.)$/.test(text) ? text : `${text}…`;
   }
 
   return text;
