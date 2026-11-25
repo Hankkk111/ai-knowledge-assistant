@@ -5,6 +5,7 @@ import {
   DEFAULT_CHUNK_LIMIT,
   MAX_CHUNK_LIMIT,
   normalizeMetadata,
+  resolveMaxChunkDistance,
   type Queryable,
 } from "../../src/services/retrieval";
 
@@ -79,6 +80,53 @@ describe("findRelevantChunks", () => {
     await findRelevantChunks([1], MAX_CHUNK_LIMIT, db);
     assert.equal(calls[0].values[1], MAX_CHUNK_LIMIT);
   });
+});
+
+describe("findRelevantChunks maxDistance", () => {
+  test("adds no distance filter when no cut-off is set", async () => {
+    const { db, calls } = fakeDb();
+    await findRelevantChunks([1, 2], 3, db, undefined);
+    assert.doesNotMatch(calls[0].text, /<= \$3/);
+    assert.deepEqual(calls[0].values, ["[1,2]", 3]);
+  });
+
+  test("only returns chunks within the cut-off distance", async () => {
+    const { db, calls } = fakeDb();
+    await findRelevantChunks([1, 2], 3, db, 0.6);
+    assert.match(calls[0].text, /WHERE embedding IS NOT NULL\s+AND embedding <=> \$1 <= \$3\s+ORDER BY/);
+    assert.deepEqual(calls[0].values, ["[1,2]", 3, 0.6]);
+  });
+
+  for (const maxDistance of [0, -0.5, 2.5, NaN]) {
+    test(`rejects maxDistance ${maxDistance} without querying the database`, async () => {
+      const { db, calls } = fakeDb();
+      await assert.rejects(findRelevantChunks([1], 3, db, maxDistance), RangeError);
+      assert.equal(calls.length, 0);
+    });
+  }
+});
+
+describe("resolveMaxChunkDistance", () => {
+  test("is undefined when MAX_CHUNK_DISTANCE is not set", () => {
+    assert.equal(resolveMaxChunkDistance({}), undefined);
+  });
+
+  for (const [raw, expected] of [
+    ["0.6", 0.6],
+    [" 0.35 ", 0.35],
+    [".5", 0.5],
+    ["2", 2],
+  ] as Array<[string, number]>) {
+    test(`parses ${JSON.stringify(raw)} as ${expected}`, () => {
+      assert.equal(resolveMaxChunkDistance({ MAX_CHUNK_DISTANCE: raw }), expected);
+    });
+  }
+
+  for (const raw of ["", "  ", "abc", "0", "2.5", "-0.5", "1e-1", "0x1", "0.5.1"]) {
+    test(`ignores ${JSON.stringify(raw)}`, () => {
+      assert.equal(resolveMaxChunkDistance({ MAX_CHUNK_DISTANCE: raw }), undefined);
+    });
+  }
 });
 
 describe("normalizeMetadata", () => {
