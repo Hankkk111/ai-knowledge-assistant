@@ -94,8 +94,13 @@ app.use((err: HttpError, _req: Request, res: Response, next: NextFunction) => {
     return;
   }
 
-  console.error("Unhandled error:", err);
   const status = err.status && err.status >= 400 && err.status < 600 ? err.status : 500;
+  // A 4xx here is a problem with the request (e.g. body-parser's 415 for an
+  // unsupported charset, or 400 when the client aborts mid-upload), not a
+  // server fault, so don't log it with a stack trace as if it were one.
+  if (status >= 500) {
+    console.error("Unhandled error:", err);
+  }
   res.status(status).json({ error: status >= 500 ? "Internal server error" : err.message });
 });
 

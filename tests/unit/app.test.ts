@@ -1,4 +1,4 @@
-import { test, describe, before, after } from "node:test";
+import { test, describe, before, after, mock } from "node:test";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
@@ -125,5 +125,22 @@ describe("app error handling", () => {
     assert.equal(res.status, 404);
     assert.match(res.headers.get("content-type") ?? "", /application\/json/);
     assert.deepEqual(await res.json(), { error: "route not found: GET /does-not-exist" });
+  });
+
+  test("a client error from the body parser is returned as JSON without being logged", async () => {
+    const errorLog = mock.method(console, "error", () => {});
+    try {
+      const res = await fetch(`${baseUrl}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=latin1" },
+        body: JSON.stringify({ query: "hello" }),
+      });
+      assert.equal(res.status, 415);
+      assert.match(res.headers.get("content-type") ?? "", /application\/json/);
+      assert.deepEqual(await res.json(), { error: 'unsupported charset "LATIN1"' });
+      assert.equal(errorLog.mock.callCount(), 0);
+    } finally {
+      errorLog.mock.restore();
+    }
   });
 });
