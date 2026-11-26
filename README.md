@@ -57,10 +57,13 @@ Configuration, all optional (defaults match the local setup above):
 | DB_USER / DB_PASSWORD | postgres / postgres | Postgres credentials |
 | BEDROCK_REGION | us-east-1 | Region for Bedrock embedding and generation calls |
 | MAX_CHUNK_DISTANCE | unset (no cut-off) | Largest cosine distance (0 to 2) a retrieved chunk may have from the question |
+| CORS_ALLOWED_ORIGINS | unset (any origin) | Comma-separated browser origins allowed to call the API |
 
 PORT and DB_PORT must be a plain decimal number from 1 to 65535. Any other value (blank, `abc`, `70000`, `0x1538`, `5432.0`) is ignored and the default is used. A blank BEDROCK_REGION also falls back to the default.
 
 By default /chat always uses the 5 nearest chunks, even when none of them is about the question, so the model is handed unrelated context and lists it as sources. Set MAX_CHUNK_DISTANCE to drop chunks further away than that cosine distance (0 means identical direction, 2 opposite); if no chunk is close enough, /chat returns the "couldn't find" answer instead. It must be a plain decimal number greater than 0 and at most 2 (e.g. `0.6`); any other value is ignored and no cut-off is applied. A good value depends on the indexed documents, so try a few questions they do and don't cover before settling on one.
+
+The deployed frontend is served from a different origin than the API, so browsers preflight every /chat call with an OPTIONS request. The API answers preflights itself (204 with `Access-Control-Allow-Methods: GET, HEAD, POST`, `Access-Control-Allow-Headers: Content-Type`, cached for 10 minutes) and adds `Access-Control-Allow-Origin` to every response, errors included, and exposes `Retry-After`. By default any origin is allowed, since the API is public and uses no cookies or credentials. To restrict it, set CORS_ALLOWED_ORIGINS to a comma-separated list of exact origins (e.g. `https://d111111abcdef8.cloudfront.net,http://localhost:5173`, trailing slashes are ignored); other origins then get no allow-origin header and the browser blocks their requests.
 
 Postgres connections time out after 5 seconds and individual queries after 10 seconds (DB_CONNECTION_TIMEOUT_MS and DB_QUERY_TIMEOUT_MS in src/db/client.ts), so an unreachable database makes /chat return a 502 well within the 30-second Lambda timeout instead of hanging until API Gateway gives up.
 
@@ -144,6 +147,7 @@ A 200 response without a non-blank `answer` string is treated as an error too, a
 ## Project structure
 
 - src/app.ts, Express app definition
+- src/cors.ts, CORS headers and preflight handling
 - src/index.ts, local dev entry point
 - src/port.ts, dev server port selection
 - src/shutdown.ts, graceful SIGTERM/SIGINT shutdown for the dev server
