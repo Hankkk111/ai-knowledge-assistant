@@ -1,10 +1,13 @@
 import express, { type NextFunction, type Request, type Response } from "express";
+import { createCorsMiddleware, resolveAllowedOrigins } from "./cors";
 import { handleChat } from "./handlers/chat";
 
 const app = express();
 // Don't advertise the framework (and, indirectly, its version range) in an
 // `X-Powered-By: Express` header on every response.
 app.disable("x-powered-by");
+// Before express.json(), so body-parsing errors also get CORS headers.
+app.use(createCorsMiddleware(resolveAllowedOrigins()));
 // A /chat body is a query of at most MAX_QUERY_LENGTH (2000) UTF-16 units, so
 // even with every unit escaped as \uXXXX (6 bytes) it stays below 16kb. The
 // express.json() default of 100kb would make the server buffer and parse
