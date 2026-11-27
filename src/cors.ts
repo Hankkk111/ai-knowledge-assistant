@@ -13,7 +13,10 @@ export const CORS_MAX_AGE_SECONDS = 600;
  * `*` allows any origin: the API is public, takes no cookies or credentials,
  * and the deployed frontend is served from a different origin (S3/CloudFront)
  * than API Gateway. Entries are trimmed and a trailing slash is dropped,
- * because a browser's Origin header never has one.
+ * because a browser's Origin header never has one. They are also lowercased:
+ * browsers always send the scheme and host in lowercase, so an entry such as
+ * `https://App.example.com` would otherwise never match and its requests
+ * would be blocked.
  */
 export function resolveAllowedOrigins(env: NodeJS.ProcessEnv = process.env): AllowedOrigins {
   const raw = env.CORS_ALLOWED_ORIGINS?.trim();
@@ -21,7 +24,7 @@ export function resolveAllowedOrigins(env: NodeJS.ProcessEnv = process.env): All
 
   const origins = raw
     .split(",")
-    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .map((origin) => origin.trim().replace(/\/+$/, "").toLowerCase())
     .filter((origin) => origin.length > 0);
 
   return origins.length > 0 ? origins : "*";

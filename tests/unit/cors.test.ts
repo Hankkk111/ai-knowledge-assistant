@@ -27,6 +27,13 @@ describe("resolveAllowedOrigins", () => {
     );
   });
 
+  test("lowercases entries to match the Origin header browsers send", () => {
+    assert.deepEqual(
+      resolveAllowedOrigins({ CORS_ALLOWED_ORIGINS: "https://App.Example.com,HTTP://LOCALHOST:5173" }),
+      ["https://app.example.com", "http://localhost:5173"]
+    );
+  });
+
   test("falls back to any origin when the list has no entries", () => {
     assert.equal(resolveAllowedOrigins({ CORS_ALLOWED_ORIGINS: " , ," }), "*");
   });
