@@ -83,6 +83,28 @@ describe("scripts/health-check.sh /health check", () => {
     assert.match(output, /did not report status=ok/);
   });
 
+  test("fails with HTTP 000 when nothing is listening", async () => {
+    // Bind and release a port so the request is refused rather than hanging.
+    const server = createServer();
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address() as AddressInfo;
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+
+    const child = spawn("bash", [SCRIPT], {
+      env: { ...process.env, BASE_URL: `http://127.0.0.1:${port}` },
+    });
+    let output = "";
+    child.stdout.on("data", (d) => (output += d));
+    child.stderr.on("data", (d) => (output += d));
+    const code = await new Promise<number | null>((resolve) => child.on("close", resolve));
+
+    assert.equal(code, 1, output);
+    // curl prints "000" itself on a connection failure; the fallback must not
+    // append a second one ("000000").
+    assert.match(output, /returned HTTP 000 \(expected 200\)/);
+    assert.doesNotMatch(output, /All checks passed/);
+  });
+
   test("fails on a non-200 response", async () => {
     const { code, output } = await runAgainst('{"status":"ok"}', 503);
     assert.equal(code, 1);
