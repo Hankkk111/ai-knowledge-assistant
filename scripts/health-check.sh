@@ -91,8 +91,13 @@ fi
 # --- 3. Disk space check (only meaningful when run on the host) ---
 if [[ "$CHECK_SERVICE" == "true" ]]; then
   log "Checking disk space on / ..."
-  DISK_USAGE=$(df / | awk 'NR==2 {gsub("%","",$5); print $5}')
-  if [[ "$DISK_USAGE" -ge "$DISK_THRESHOLD_PERCENT" ]]; then
+  # -P keeps each filesystem on one line: without it, df wraps a long device
+  # name (e.g. an LVM or NVMe path) onto its own line, so line 2 holds no
+  # usage column and the check compared an empty string against the threshold.
+  DISK_USAGE=$(df -P / | awk 'NR==2 {gsub("%","",$5); print $5}')
+  if [[ ! "$DISK_USAGE" =~ ^[0-9]+$ ]]; then
+    fail "Could not read disk usage for / (got: '${DISK_USAGE}')"
+  elif [[ "$DISK_USAGE" -ge "$DISK_THRESHOLD_PERCENT" ]]; then
     fail "Disk usage at ${DISK_USAGE}%, exceeds threshold of ${DISK_THRESHOLD_PERCENT}%"
   else
     log "OK: disk usage at ${DISK_USAGE}%"
