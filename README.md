@@ -144,6 +144,18 @@ A 200 response without a non-blank `answer` string is treated as an error too, a
     terraform plan
     terraform apply
 
+## Health check script
+
+scripts/health-check.sh checks a running deployment and exits non-zero if anything is wrong, so it can gate a deploy or run from cron:
+
+    ./scripts/health-check.sh                                    # checks http://localhost:3000
+    BASE_URL=https://xum7phmpeg.execute-api.us-east-1.amazonaws.com ./scripts/health-check.sh
+    ./scripts/health-check.sh --remote-service                   # on the EC2 host: also systemd and disk
+
+It always requests `${BASE_URL}/health` (10-second timeout) and expects HTTP 200 with a body whose `status` is `ok`; a refused or timed-out connection is reported as HTTP 000. With `--remote-service` it also checks that the `ai-knowledge-assistant` systemd unit is active and that disk usage on `/` is below 85%; Ansible runs it this way after every deploy (infra/ansible/roles/app/tasks/main.yml), using the copy in infra/ansible/roles/app/files/, which must stay identical to scripts/health-check.sh (a unit test enforces this). The Deployment Health Check workflow runs it against the Lambda and EC2 deployments on every push to main and every 6 hours.
+
+Exit codes: 0 when every check passes, 1 when any check fails (each failure is printed to stderr), 2 for an unknown argument, so a typo such as `--remote-services` can't silently skip the host checks.
+
 ## Project structure
 
 - src/app.ts, Express app definition
