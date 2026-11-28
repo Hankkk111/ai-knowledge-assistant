@@ -50,6 +50,14 @@ describe("app error handling", () => {
     assert.deepEqual(await res.json(), { error: "request body must be valid JSON" });
   });
 
+  test("a valid JSON body that is not an object or array is not reported as invalid JSON", async () => {
+    for (const body of ['"How do I rotate the API keys?"', "42", "true", "null"]) {
+      const res = await postChat(body);
+      assert.equal(res.status, 400, body);
+      assert.deepEqual(await res.json(), { error: "request body must be a JSON object" }, body);
+    }
+  });
+
   test("oversized JSON body returns a 413 JSON error", async () => {
     const res = await postChat(JSON.stringify({ query: "x".repeat(20 * 1024) }));
     assert.equal(res.status, 413);

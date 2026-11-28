@@ -73,6 +73,24 @@ app.use((req: Request, res: Response) => {
 interface HttpError extends Error {
   status?: number;
   type?: string;
+  body?: unknown;
+}
+
+/**
+ * True when a body that express.json() refused to parse is in fact valid
+ * JSON. In its default strict mode express.json() only accepts an object or
+ * array, so a top-level string, number, `true` or `null` is reported as a
+ * parse failure too, and telling that client its JSON is invalid sends it
+ * looking for a syntax error that isn't there.
+ */
+export function isValidJson(body: unknown): boolean {
+  if (typeof body !== "string") return false;
+  try {
+    JSON.parse(body);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Without this, a malformed or oversized JSON body falls through to Express's
@@ -85,7 +103,11 @@ app.use((err: HttpError, _req: Request, res: Response, next: NextFunction) => {
   }
 
   if (err.type === "entity.parse.failed") {
-    res.status(400).json({ error: "request body must be valid JSON" });
+    res.status(400).json({
+      error: isValidJson(err.body)
+        ? "request body must be a JSON object"
+        : "request body must be valid JSON",
+    });
     return;
   }
 
