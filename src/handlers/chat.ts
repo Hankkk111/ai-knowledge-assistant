@@ -20,9 +20,19 @@ const BLANK_TEXT = /^[\s\p{Cf}]*$/u;
 // Maximum length, in Unicode code points, of the source snippet returned per chunk.
 export const SNIPPET_LENGTH = 150;
 
+// Soft hyphens (U+00AD), zero-width spaces (U+200B) and byte order marks
+// (U+FEFF) are common leftovers from extracting PDFs and web pages. They are
+// invisible, but still count toward SNIPPET_LENGTH, and a zero-width space
+// inside a word stops the cut from backing up to the end of that word, so
+// they are removed from the preview. Other format characters, such as the
+// zero-width joiner in emoji sequences, are kept because they change how
+// the text renders.
+const INVISIBLE_BREAK_CHARS = /[\u00AD\u200B\uFEFF]/g;
+
 /**
  * Builds the short preview of a chunk that is returned in `sources`.
- * Whitespace runs (chunks often keep the line breaks and indentation of the
+ * Soft hyphens, zero-width spaces and byte order marks are dropped, and
+ * whitespace runs (chunks often keep the line breaks and indentation of the
  * original document) are collapsed to single spaces so the preview reads as
  * one line. Truncation counts Unicode code points rather than UTF-16 units,
  * so an emoji or other astral character is never split into a lone surrogate
@@ -30,7 +40,10 @@ export const SNIPPET_LENGTH = 150;
  * when one is close by, and an ellipsis marks that the text was cut.
  */
 export function buildSnippet(content: string, maxLength: number = SNIPPET_LENGTH): string {
-  const normalized = content.replace(/\s+/g, " ").trim();
+  const normalized = content
+    .replace(INVISIBLE_BREAK_CHARS, "")
+    .replace(/\s+/g, " ")
+    .trim();
   const codePoints = Array.from(normalized);
 
   if (codePoints.length <= maxLength) {

@@ -370,6 +370,23 @@ describe("isThrottlingError", () => {
 });
 
 describe("buildSnippet", () => {
+  test("drops soft hyphens, zero-width spaces and byte order marks", () => {
+    assert.equal(
+      buildSnippet("\uFEFFRe\u00ADfunds are\u200B pro\u200Bcessed in 5 days."),
+      "Refunds are processed in 5 days."
+    );
+  });
+
+  test("keeps the zero-width joiner inside an emoji sequence", () => {
+    const family = "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}";
+    assert.equal(buildSnippet(`Family plan ${family}`), `Family plan ${family}`);
+  });
+
+  test("invisible characters don't count toward the length limit", () => {
+    const word = "ab\u00AD".repeat(SNIPPET_LENGTH / 2);
+    assert.equal(buildSnippet(word), "ab".repeat(SNIPPET_LENGTH / 2));
+  });
+
   test("returns short content unchanged", () => {
     assert.equal(buildSnippet("Refunds take 5 days."), "Refunds take 5 days.");
   });
