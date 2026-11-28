@@ -13,6 +13,11 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:3000}"
+# Drop trailing slashes, so BASE_URL=https://host/ requests /health rather
+# than //health, which the API answers with a 404.
+while [[ "$BASE_URL" == */ ]]; do
+  BASE_URL="${BASE_URL%/}"
+done
 DISK_THRESHOLD_PERCENT=85
 SERVICE_NAME="ai-knowledge-assistant"
 CHECK_SERVICE=false

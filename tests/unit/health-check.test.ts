@@ -44,8 +44,14 @@ describe("scripts/health-check.sh arguments", () => {
 });
 
 // Runs the script against a local server whose /health answers with `body`.
-async function runAgainst(body: string, status = 200) {
-  const server = createServer((_req, res) => {
+// Like the API, anything but exactly /health gets a 404. `baseUrlSuffix` is
+// appended to BASE_URL (e.g. a trailing slash).
+async function runAgainst(body: string, status = 200, baseUrlSuffix = "") {
+  const server = createServer((req, res) => {
+    if (req.url !== "/health") {
+      res.writeHead(404, { "Content-Type": "application/json" }).end('{"error":"not found"}');
+      return;
+    }
     res.writeHead(status, { "Content-Type": "application/json" }).end(body);
   });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -54,7 +60,7 @@ async function runAgainst(body: string, status = 200) {
     // Async spawn: spawnSync would block the event loop and the server could
     // never answer the script's request.
     const child = spawn("bash", [SCRIPT], {
-      env: { ...process.env, BASE_URL: `http://127.0.0.1:${port}` },
+      env: { ...process.env, BASE_URL: `http://127.0.0.1:${port}${baseUrlSuffix}` },
     });
     let output = "";
     child.stdout.on("data", (d) => (output += d));
@@ -75,6 +81,12 @@ describe("scripts/health-check.sh /health check", () => {
   test("passes when the body has whitespace around the colon", async () => {
     const { code, output } = await runAgainst('{ "status": "ok" }');
     assert.equal(code, 0, output);
+  });
+
+  test("ignores trailing slashes on BASE_URL", async () => {
+    const { code, output } = await runAgainst('{"status":"ok"}', 200, "//");
+    assert.equal(code, 0, output);
+    assert.match(output, /Checking http:\/\/127\.0\.0\.1:\d+\/health \.\.\./);
   });
 
   test("fails when the body reports another status", async () => {
