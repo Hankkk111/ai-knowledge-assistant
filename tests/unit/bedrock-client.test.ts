@@ -15,6 +15,11 @@ test("resolveBedrockRegion uses BEDROCK_REGION when set", () => {
   assert.equal(resolveBedrockRegion({ BEDROCK_REGION: "us-west-2" }), "us-west-2");
 });
 
+test("resolveBedrockRegion lowercases the region name", () => {
+  assert.equal(resolveBedrockRegion({ BEDROCK_REGION: "US-WEST-2" }), "us-west-2");
+  assert.equal(resolveBedrockRegion({ BEDROCK_REGION: " Eu-Central-1 " }), "eu-central-1");
+});
+
 test("resolveBedrockRegion trims whitespace and ignores blank values", () => {
   assert.equal(resolveBedrockRegion({ BEDROCK_REGION: "  eu-central-1 " }), "eu-central-1");
   assert.equal(resolveBedrockRegion({ BEDROCK_REGION: "   " }), DEFAULT_BEDROCK_REGION);

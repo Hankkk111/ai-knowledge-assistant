@@ -59,7 +59,7 @@ Configuration, all optional (defaults match the local setup above):
 | MAX_CHUNK_DISTANCE | unset (no cut-off) | Largest cosine distance (0 to 2) a retrieved chunk may have from the question |
 | CORS_ALLOWED_ORIGINS | unset (any origin) | Comma-separated browser origins allowed to call the API |
 
-PORT and DB_PORT must be a plain decimal number from 1 to 65535. Any other value (blank, `abc`, `70000`, `0x1538`, `5432.0`) is ignored and the default is used. A blank BEDROCK_REGION also falls back to the default.
+PORT and DB_PORT must be a plain decimal number from 1 to 65535. Any other value (blank, `abc`, `70000`, `0x1538`, `5432.0`) is ignored and the default is used. A blank BEDROCK_REGION also falls back to the default, and letter case is ignored (`US-WEST-2` is used as `us-west-2`).
 
 By default /chat always uses the 5 nearest chunks, even when none of them is about the question, so the model is handed unrelated context and lists it as sources. Set MAX_CHUNK_DISTANCE to drop chunks further away than that cosine distance (0 means identical direction, 2 opposite); if no chunk is close enough, /chat returns the "couldn't find" answer instead. It must be a plain decimal number greater than 0 and at most 2 (e.g. `0.6`); any other value is ignored and no cut-off is applied. A good value depends on the indexed documents, so try a few questions they do and don't cover before settling on one.
 

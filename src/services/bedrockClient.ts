@@ -8,10 +8,12 @@ export const DEFAULT_BEDROCK_REGION = "us-east-1";
  * Picks the region for Bedrock calls. `BEDROCK_REGION` overrides the default,
  * e.g. when model access is enabled in a different region than us-east-1.
  * Blank values are ignored so an empty variable can't produce an invalid
- * endpoint.
+ * endpoint. The value is lowercased: region names are always lowercase, and
+ * the region is part of the SigV4 signing scope, so `US-WEST-2` would make
+ * every Bedrock call fail with a signature mismatch.
  */
 export function resolveBedrockRegion(env: NodeJS.ProcessEnv = process.env): string {
-  const region = env.BEDROCK_REGION?.trim();
+  const region = env.BEDROCK_REGION?.trim().toLowerCase();
   return region ? region : DEFAULT_BEDROCK_REGION;
 }
 
